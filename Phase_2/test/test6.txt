@@ -1,0 +1,18 @@
+function test(x, y) {
+    // compute sum
+    result = x + y;
+
+    /* multi
+       line
+       comment */
+
+    if (result >= 10) {
+        print("value:\n");
+    }
+
+    /* nested
+        /* inner */
+       done */
+
+    return result;
+}
