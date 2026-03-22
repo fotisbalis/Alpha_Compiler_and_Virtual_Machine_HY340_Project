@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "token.h"
+#include "parser.tab.h"
+
 #define YY_DECL int alpha_yylex(Token *token)
 
 int counter = 0; /* token counter */
@@ -30,7 +32,7 @@ void assign_token(Token* t, char *type, char *content, char *name){
 
 "//".* { /* SINGLE LINE COMMENT */ 
 	assign_token(token, "COMMENT", "", "LINE_COMMENT");
-        return 1;
+        return LINE_COMMENT;
 }
 
 "/*" { /* BLOCK COMMENTS */
@@ -60,7 +62,7 @@ void assign_token(Token* t, char *type, char *content, char *name){
 
 		nested_comments--;
 
-		return 1;
+		return NESTED_COMMENT;
 	}
 
 	/* The block closes */
@@ -77,7 +79,7 @@ void assign_token(Token* t, char *type, char *content, char *name){
 		t->content = strdup(content);
 
 		BEGIN(INITIAL);
-		return 1;
+		return BLOCK_COMMENT;
 	}
 }
 
@@ -115,9 +117,12 @@ void assign_token(Token* t, char *type, char *content, char *name){
 	Token* t = (Token*) token;
 	t->content = strdup(str);
 	t->name = strdup(str);
+
+	yylval.strVal = strdup(str);
+
 	BEGIN(INITIAL);
 
-        return 1;
+        return STRING;
 }
 
 <STRING><<EOF>> {
@@ -130,207 +135,207 @@ void assign_token(Token* t, char *type, char *content, char *name){
 
 "{" {	/* PUNCTUATIONS */
         assign_token(token, "PUNCTUATION", yytext, "LEFT_BRACE");
-        return 1;
+        return LEFT_BRACE;
 }
 
 "}" {
         assign_token(token, "PUNCTUATION", yytext, "RIGHT_BRACE");
-        return 1;
+        return RIGHT_BRACE;
 }
 
 "[" {
         assign_token(token, "PUNCTUATION", yytext, "LEFT_BRACKET");
-        return 1;
+        return LEFT_BRACKET;
 }
 
 "]" {
         assign_token(token, "PUNCTUATION", yytext, "RIGHT_BRACKET");
-        return 1;
+        return RIGHT_BRACKET;
 }
 
 "(" {
         assign_token(token, "PUNCTUATION", yytext, "LEFT_PARENTHESIS");
-        return 1;
+        return LEFT_PARENTHESIS;
 }
 
 ")" {
         assign_token(token, "PUNCTUATION", yytext, "RIGHT_PARENTHESIS");
-        return 1;
+        return RIGHT_PARENTHESIS;
 }
 
 "::" {
         assign_token(token, "PUNCTUATION", yytext, "DOUBLE_COLON");
-        return 1;
+        return DOUBLE_COLON;
 }
 
 ".." {
         assign_token(token, "PUNCTUATION", yytext, "DOUBLE_DOT");
-        return 1;
+        return DOUBLE_DOT;
 }
 
 ":" {
         assign_token(token, "PUNCTUATION", yytext, "COLON");
-        return 1;
+        return COLON;
 }
 
 "." {
         assign_token(token, "PUNCTUATION", yytext, "DOT");
-        return 1;
+        return DOT;
 }
 
 "," {
         assign_token(token, "PUNCTUATION", yytext, "COMMA");
-        return 1;
+        return COMMA;
 }
 
 ";" {
         assign_token(token, "PUNCTUATION", yytext, "SEMI_COLON");
-        return 1;
+        return SEMI_COLON;
 }
 
 "if" {	/* KEYWORDS */
 	assign_token(token, "KEYWORD", yytext, "IF");
-	return 1;
+	return IF;
 }
 
 "else" {
 	assign_token(token, "KEYWORD", yytext, "ELSE");
-	return 1;
+	return ELSE;
 }
 
 "while" {
 	assign_token(token, "KEYWORD", yytext, "WHILE");
-	return 1;
+	return WHILE;
 }
 
 "for" {
 	assign_token(token, "KEYWORD", yytext, "FOR");
-	return 1;
+	return FOR;
 }
 
 "function" {
 	assign_token(token, "KEYWORD", yytext, "FUNCTION");
-	return 1;
+	return FUNCTION;
 }
 
 "break" {
 	assign_token(token, "KEYWORD", yytext, "BREAK");
-	return 1;
+	return BREAK;
 }
 
 "continue" {
 	assign_token(token, "KEYWORD", yytext, "CONTINUE");
-	return 1;
+	return CONTINUE;
 }
 
 "return" {
 	assign_token(token, "KEYWORD", yytext, "RETURN");
-	return 1;
+	return RETURN;
 }
 
 "and" {
 	assign_token(token, "KEYWORD", yytext, "AND");
-	return 1;
+	return AND;
 }
 
 "not" {
         assign_token(token, "KEYWORD", yytext, "NOT");
-        return 1;
+        return NOT;
 }
 
 "or" {
         assign_token(token, "KEYWORD", yytext, "OR");
-        return 1;
+        return OR;
 }
 
 "local" {
         assign_token(token, "KEYWORD", yytext, "LOCAL");
-        return 1;
+        return LOCAL;
 }
 
 "true" {
         assign_token(token, "KEYWORD", yytext, "TRUE");
-        return 1;
+        return TRUE;
 }
 
 "false" {
         assign_token(token, "KEYWORD", yytext, "FALSE");
-        return 1;
+        return FALSE;
 }
 
 "nil" {
         assign_token(token, "KEYWORD", yytext, "NIL");
-        return 1;
+        return NIL;
 }
 
 "==" {	/* OPERATORS */
 	assign_token(token, "OPERATOR", yytext, "EQUAL");
-	return 1;
+	return EQUAL;
 }
 
 "!=" {
 	assign_token(token, "OPERATOR", yytext, "NOT_EQUAL");
- 	return 1;
+ 	return NOT_EQUAL;
 }
 
 "<=" {
 	assign_token(token, "OPERATOR", yytext, "LESS_EQUAL");
-	return 1;
+	return LESS_EQUAL;
 }
 
 ">=" {
 	assign_token(token, "OPERATOR", yytext, "GREATER_EQUAL");
-	return 1;
+	return GREATER_EQUAL;
 }
 
 "=" {
 	assign_token(token, "OPERATOR", yytext, "ASSIGN");
-	return 1;
+	return ASSIGN;
 }
 
 "<" {
 	assign_token(token, "OPERATOR", yytext, "LESS");
-	return 1;
+	return LESS;
 }
 
 ">" {
 	assign_token(token, "OPERATOR", yytext, "GREATER");
-	return 1;
+	return GREATER;
 }
 
 "++" {
 	assign_token(token, "OPERATOR", yytext, "PLUS_PLUS");
-	return 1;
+	return PLUS_PLUS;
 }
 
 "+" {
 	assign_token(token, "OPERATOR", yytext, "PLUS");
-	return 1;
+	return PLUS;
 }
 
 "--" {
 	assign_token(token, "OPERATOR", yytext, "MINUS_MINUS");
-	return 1;
+	return MINUS_MINUS;
 }
 
 "-" {
 	assign_token(token, "OPERATOR", yytext, "MINUS");
-	return 1;
+	return MINUS;
 }
 
 "*" {
 	assign_token(token, "OPERATOR", yytext, "MULTIPLY");
- 	return 1;
+ 	return MULTIPLY;
 }
 
 "/" {
 	assign_token(token, "OPERATOR", yytext, "DIVISION");
-	return 1;
+	return DIVISION;
 }
 
 "%" {
 	assign_token(token, "OPERATOR", yytext, "MOD");
-	return 1;
+	return MOD;
 }
 
 
@@ -341,7 +346,9 @@ void assign_token(Token* t, char *type, char *content, char *name){
 	t->content = strdup(yytext);
 	t->type = "CONST_REAL";
         t->name = strdup(yytext);
-	return 1;
+
+	yylval.realVal = strtod(yytext, NULL);
+	return CONST_REAL;
 }
 
 [0-9]+ {	/* INT CONSTANT */
@@ -351,7 +358,9 @@ void assign_token(Token* t, char *type, char *content, char *name){
 	t->content = strdup(yytext);
 	t->type = "CONST_INT";
 	t->name = strdup(yytext);
-	return 1;
+
+	yylval.intVal = atoi(yytext);
+	return CONST_INT;
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* {  /* ID */
@@ -361,7 +370,9 @@ void assign_token(Token* t, char *type, char *content, char *name){
 	t->content = strdup(yytext);
 	t->type = "ID";
 	t->name = strdup(yytext);
-	return 1;
+
+	yylval.idVal = strdup(yytext);
+	return ID;
 }
 
 [ \t\n]+ { /* IGNORE WHITESPACE, TAB, NEWLINE */}

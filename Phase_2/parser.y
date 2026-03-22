@@ -4,12 +4,13 @@
 #include <string.h>
 #include "token.h"
 
+extern FILE *yyin;
 extern int alpha_yylex(Token *token);
 Token t;
 
 int yylex(void) {
 	if(alpha_yylex(&t)) {
-		return 1; /* generic token */
+		return 1;
 	}
 	return 0;
 }
@@ -17,12 +18,21 @@ int yylex(void) {
 void yyerror(const char *s);
 %}
 
-%token STRING
+%union {
+	char* strVal;
+	char* idVal;
+	int intVal;
+	double realVal;
+}
+
+%token LINE_COMMENT NESTED_COMMENT BLOCK_COMMENT
+%token <strVal> STRING
 %token LEFT_BRACE RIGHT_BRACE LEFT_BRACKET RIGHT_BRACKET LEFT_PARENTHESIS RIGHT_PARENTHESIS DOUBLE_COLON DOUBLE_DOT COLON DOT COMMA SEMI_COLON
 %token IF ELSE WHILE FOR FUNCTION RETURN BREAK CONTINUE AND NOT OR LOCAL TRUE FALSE NIL
 %token EQUAL NOT_EQUAL LESS_EQUAL GREATER_EQUAL ASSIGN LESS GREATER PLUS_PLUS PLUS MINUS_MINUS MINUS MULTIPLY DIVISION MOD
-%token CONST_INT CONST_REAL
-%token ID
+%token <intVal> CONST_INT 
+%token <realVal> CONST_REAL
+%token <idVal> ID
 
 %%
 
@@ -142,6 +152,33 @@ returnvalue:
 ;
 
 %%
+
+int main(int argc, char **argv) {
+	
+	if(argc != 2) {
+		printf("No input file given.\n");
+		return 1;
+	}
+
+	yyin = fopen(argv[1], "r");
+	if(!yyin) {
+		printf("Cannot open input file.\n");
+		return 1;
+	}
+
+	printf("Parsing started.\n");
+
+ 	if(yyparse() != 0) {
+		printf("Parsing failed.\n");
+		return 1;
+	}
+
+    	printf("Parsing finished.\n");
+
+	fclose(yyin);
+    	
+	return 0;
+}
 
 void yyerror(const char *s) {
 	fprintf(stderr, "Parse error: %s\n", s);

@@ -49,57 +49,72 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    STRING = 258,
-    LEFT_BRACE = 259,
-    RIGHT_BRACE = 260,
-    LEFT_BRACKET = 261,
-    RIGHT_BRACKET = 262,
-    LEFT_PARENTHESIS = 263,
-    RIGHT_PARENTHESIS = 264,
-    DOUBLE_COLON = 265,
-    DOUBLE_DOT = 266,
-    COLON = 267,
-    DOT = 268,
-    COMMA = 269,
-    SEMI_COLON = 270,
-    IF = 271,
-    ELSE = 272,
-    WHILE = 273,
-    FOR = 274,
-    FUNCTION = 275,
-    RETURN = 276,
-    BREAK = 277,
-    CONTINUE = 278,
-    AND = 279,
-    NOT = 280,
-    OR = 281,
-    LOCAL = 282,
-    TRUE = 283,
-    FALSE = 284,
-    NIL = 285,
-    EQUAL = 286,
-    NOT_EQUAL = 287,
-    LESS_EQUAL = 288,
-    GREATER_EQUAL = 289,
-    ASSIGN = 290,
-    LESS = 291,
-    GREATER = 292,
-    PLUS_PLUS = 293,
-    PLUS = 294,
-    MINUS_MINUS = 295,
-    MINUS = 296,
-    MULTIPLY = 297,
-    DIVISION = 298,
-    MOD = 299,
-    CONST_INT = 300,
-    CONST_REAL = 301,
-    ID = 302
+    LINE_COMMENT = 258,
+    NESTED_COMMENT = 259,
+    BLOCK_COMMENT = 260,
+    STRING = 261,
+    LEFT_BRACE = 262,
+    RIGHT_BRACE = 263,
+    LEFT_BRACKET = 264,
+    RIGHT_BRACKET = 265,
+    LEFT_PARENTHESIS = 266,
+    RIGHT_PARENTHESIS = 267,
+    DOUBLE_COLON = 268,
+    DOUBLE_DOT = 269,
+    COLON = 270,
+    DOT = 271,
+    COMMA = 272,
+    SEMI_COLON = 273,
+    IF = 274,
+    ELSE = 275,
+    WHILE = 276,
+    FOR = 277,
+    FUNCTION = 278,
+    RETURN = 279,
+    BREAK = 280,
+    CONTINUE = 281,
+    AND = 282,
+    NOT = 283,
+    OR = 284,
+    LOCAL = 285,
+    TRUE = 286,
+    FALSE = 287,
+    NIL = 288,
+    EQUAL = 289,
+    NOT_EQUAL = 290,
+    LESS_EQUAL = 291,
+    GREATER_EQUAL = 292,
+    ASSIGN = 293,
+    LESS = 294,
+    GREATER = 295,
+    PLUS_PLUS = 296,
+    PLUS = 297,
+    MINUS_MINUS = 298,
+    MINUS = 299,
+    MULTIPLY = 300,
+    DIVISION = 301,
+    MOD = 302,
+    CONST_INT = 303,
+    CONST_REAL = 304,
+    ID = 305
   };
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+union YYSTYPE
+{
+#line 21 "parser.y"
+
+	char* strVal;
+	char* idVal;
+	int intVal;
+	double realVal;
+
+#line 115 "parser.tab.h"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
