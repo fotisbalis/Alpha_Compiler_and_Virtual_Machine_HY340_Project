@@ -1,5 +1,5 @@
 "hello world"
-"line1\nline2"
+"line1\\nline2"
 "tab\tvalue"
 "quote: \" "
 "backslash \\ "
