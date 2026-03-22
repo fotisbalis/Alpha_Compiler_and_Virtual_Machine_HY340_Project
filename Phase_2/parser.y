@@ -9,10 +9,7 @@ extern int alpha_yylex(Token *token);
 Token t;
 
 int yylex(void) {
-	if(alpha_yylex(&t)) {
-		return 1;
-	}
-	return 0;
+	return alpha_yylex(&t);
 }
 
 void yyerror(const char *s);
@@ -41,7 +38,7 @@ program:
 ;
 
 statement:
-	 stmt statement | /* empty */
+	 stmt statement | LINE_COMMENT statement | BLOCK_COMMENT statement | /* empty */
 
 stmt:
     expr SEMI_COLON | ifstmt | whilestmt | forstmt | returnstmt | BREAK SEMI_COLON | CONTINUE SEMI_COLON | block | funcdef | SEMI_COLON
