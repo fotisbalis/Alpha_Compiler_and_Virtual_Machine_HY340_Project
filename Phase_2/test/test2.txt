@@ -1,12 +1,8 @@
-if else while for function return
+function add(a, b) {
+    return a + b;
+}
 
-abc x9 test123
-
-123 0 9999
-3.14 0.5 10.0
-
-+ - * / % 
-== != ++ --
-= < > <= >=
-
-{ } [ ] ( ) ; , : :: . ..
+local x = 10;
+if x > 5 {
+    x = x * 2;
+}

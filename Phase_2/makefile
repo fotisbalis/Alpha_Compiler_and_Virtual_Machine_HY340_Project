@@ -2,8 +2,11 @@
 
 all:
 	flex scanner.l
-	gcc lex.yy.c scanner.c -o scanner
+	bison -d parser.y
+	gcc lex.yy.c parser.tab.c scanner.c -o scanner
 
 clean:
 	rm -f scanner
 	rm -f lex.yy.c
+	rm -f parser.tab.c
+	rm -f parser.tab.h
