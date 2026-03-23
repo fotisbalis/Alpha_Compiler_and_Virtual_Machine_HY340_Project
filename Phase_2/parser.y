@@ -126,15 +126,23 @@ indexedelem:
 ;
 
 block:
-     LEFT_BRACE {current_scope++;} stmt RIGHT_BRACE {	SymTable_hide_scope(sym_table, current_scope); 
-							current_scope--;
-							}
+	LEFT_BRACE {
+		current_scope++;
+		SymTable_unhide_scope(sym_table, current_scope);
+	} 	
+	stmt 
+	RIGHT_BRACE {	
+		SymTable_hide_scope(sym_table, current_scope); 
+		current_scope--;
+	}
 ;
 
 funcdef:
        FUNCTION ID {
-		Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1);
-		SymTable_put(sym_table, s);
+		if(SymTable_lookup_scope(sym_table, $2, current_scope) == NULL){
+			Symbol* s_func = Symbol_create($2, "function", current_scope, t.line, 1);
+			SymTable_put(sym_table, s_func);
+		}
 		current_scope++;
 	}
 	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
@@ -150,12 +158,16 @@ const:
 
 idlist:
 	ID { 	
-		Symbol* s = Symbol_create($1, "parameter", current_scope, t.line, 1);
-           	SymTable_put(sym_table, s); 
+		if(SymTable_lookup_scope(sym_table, $1, current_scope) == NULL){
+			Symbol* s = Symbol_create($1, "parameter", current_scope, t.line, 1);
+           		SymTable_put(sym_table, s); 
+		}
 	}
 	| idlist COMMA ID {
-		Symbol* s = Symbol_create($3, "parameter", current_scope, t.line, 1);
-                SymTable_put(sym_table, s);
+		if(SymTable_lookup_scope(sym_table, $3, current_scope) == NULL){
+			Symbol* s = Symbol_create($3, "parameter", current_scope, t.line, 1);
+                	SymTable_put(sym_table, s);
+		}
         }
 	| /* empty */
 ;

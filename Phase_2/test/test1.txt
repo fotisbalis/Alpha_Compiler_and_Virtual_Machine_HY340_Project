@@ -1,7 +1,7 @@
 // Single line comment
 /* Block comment with
    multiple lines */
-function add(a, b) {
+function dd(a, b) {
     return a + b;
 }
 
