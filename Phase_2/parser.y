@@ -2,11 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "token.h"
+#include "symbol_table.h"
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
 Token t;
+
+SymTable_T sym_table;
+int current_scope = 0;
 
 int yylex(void) {
 	return alpha_yylex(&t);
@@ -152,26 +157,25 @@ returnvalue:
 
 int main(int argc, char **argv) {
 	
-	if(argc != 2) {
-		printf("No input file given.\n");
-		return 1;
-	}
+	assert(argc == 2);
 
 	yyin = fopen(argv[1], "r");
-	if(!yyin) {
-		printf("Cannot open input file.\n");
-		return 1;
-	}
+	assert(yyin);
 
 	printf("Parsing started.\n");
 
- 	if(yyparse() != 0) {
-		printf("Parsing failed.\n");
-		return 1;
-	}
+	sym_table = SymTable_create();
+	
+	if(yyparse() != 0) {
+        	SymTable_free(sym_table);
+        	return 1;
+    	}	
 
     	printf("Parsing finished.\n");
 
+	SymTable_print(sym_table);
+
+	SymTable_free(sym_table);
 	fclose(yyin);
     	
 	return 0;

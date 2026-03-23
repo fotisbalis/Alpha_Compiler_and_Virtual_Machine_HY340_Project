@@ -30,7 +30,9 @@ Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive)
 	Symbol* sym = malloc(sizeof(Symbol));
     	sym->name = strdup(name);
     	sym->type = strdup(type);
-    	sym->scope = scope;
+	
+	assert(scope >= 0 && line >= 0);
+	sym->scope = scope;
     	sym->line = line;
 
 	assert(isActive == 0 || isActive == 1);
@@ -159,6 +161,19 @@ void SymTable_hide_scope(SymTable_T oSymTable, int scope){
 				n->value->isActive = 0;
 		}
 	}
+}
+
+void SymTable_unhide_scope(SymTable_T oSymTable, int scope){
+        node *n;
+        int i;
+
+        for(i = 0; i < HASH_SIZE; i++){
+
+                for(n = oSymTable->buckets[i]; n != NULL; n = n->next){
+                        if(n->value->scope == scope)
+                                n->value->isActive = 1;
+                }
+        }
 }
 
 void SymTable_print(SymTable_T oSymTable){

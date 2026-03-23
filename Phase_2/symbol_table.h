@@ -25,5 +25,7 @@ Symbol* SymTable_lookup_scope(SymTable_T oSymTable, char *name, int scope);
 
 void SymTable_hide_scope(SymTable_T oSymTable, int scope);
 
+void SymTable_unhide_scope(SymTable_T oSymTable, int scope);
+
 void SymTable_print(SymTable_T oSymTable);
 
