@@ -6,7 +6,7 @@ all:
 	gcc lex.yy.c parser.tab.c -o parser
 
 clean:
-	rm -f scanner
+	rm -f parser
 	rm -f lex.yy.c
 	rm -f parser.tab.c
 	rm -f parser.tab.h
