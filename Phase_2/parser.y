@@ -70,7 +70,19 @@ primary:
 ;
 
 lvalue:
-      ID | LOCAL ID | DOUBLE_COLON ID | member
+	ID { /* add id to symbol table */
+		if(SymTable_lookup_scope(sym_table, $1, current_scope) == NULL){
+			Symbol* s = Symbol_create($1, "variable", current_scope, t.line, 1);
+			SymTable_put(sym_table, s);
+		}
+	}
+	| LOCAL ID {
+                if(SymTable_lookup_scope(sym_table, $2, current_scope) == NULL){
+                        Symbol* s = Symbol_create($2, "local variable", current_scope, t.line, 1);
+                        SymTable_put(sym_table, s);
+                }
+        } 
+	| DOUBLE_COLON ID | member
 ;
 
 member:
@@ -114,11 +126,22 @@ indexedelem:
 ;
 
 block:
-     LEFT_BRACE stmt RIGHT_BRACE
+     LEFT_BRACE {current_scope++;} stmt RIGHT_BRACE {	SymTable_hide_scope(sym_table, current_scope); 
+							current_scope--;
+							}
 ;
 
 funcdef:
-       FUNCTION ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block
+       FUNCTION ID {
+		Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1);
+		SymTable_put(sym_table, s);
+		current_scope++;
+	}
+	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
+	block {
+		SymTable_hide_scope(sym_table, current_scope);
+		current_scope--;
+	}
 ;
 
 const:
@@ -126,7 +149,15 @@ const:
 ;
 
 idlist:
-      ID | idlist COMMA ID
+	ID { 	
+		Symbol* s = Symbol_create($1, "parameter", current_scope, t.line, 1);
+           	SymTable_put(sym_table, s); 
+	}
+	| idlist COMMA ID {
+		Symbol* s = Symbol_create($3, "parameter", current_scope, t.line, 1);
+                SymTable_put(sym_table, s);
+        }
+	| /* empty */
 ;
 
 ifstmt:
