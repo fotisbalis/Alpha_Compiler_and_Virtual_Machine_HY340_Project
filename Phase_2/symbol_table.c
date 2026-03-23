@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "sym_table.h"
+#include "symbol_table.h"
 
 #define HASH_SIZE 509
 #define MAX_SCOPE 100
 
-ypedef struct node {
+typedef struct node {
 	char *key;
 	Symbol *value;
 	struct node *next;
@@ -29,7 +29,7 @@ int SymTable_hash(char *key) {
 
 /* Create table */
 SymTable_T SymTable_new(void){
-	SymTable_T newSymTable = (struct ymTable)malloc(sizeof(struct SymTable));
+	SymTable_T newSymTable = malloc(sizeof(*newSymTable));
 
 	/* Allocate the memory for 509 buckets initially */
 	newSymTable->buckets = (node**)malloc(509*sizeof(node*));
@@ -53,7 +53,7 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 
 	index = SymTable_hash(name_scope);
 
-	assert(oSymTable != NULL && name != NULL);
+	assert(oSymTable != NULL && name_scope != NULL);
 
 	/* Check if the key already exists in the bucket and return 0 if it does */
 	for(n = oSymTable->buckets[index]; n != NULL; n = n->next){
@@ -62,7 +62,7 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 
 	/* Add new the new element at the start of the bucket */
 	new = (node*)malloc(sizeof(node));
-	new->key = strdup(scoped_name);
+	new->key = strdup(name_scope);
 	new->value = sym;
 	new->next = oSymTable->buckets[index];
 	oSymTable->buckets[index] = new;
@@ -118,14 +118,15 @@ void SymTable_hide_scope(SymTable_T oSymTable, int scope){
 }
 
 void SymTable_print(SymTable_T oSymTable){
+	node *n;
+
 	printf("\n--- SYMBOL TABLE ---\n");
 
     	for (int i = 0; i < HASH_SIZE; i++) {
-        	for(n = oSymTable->buckets[index]; n != NULL; n = n->next) {
+        	for(n = oSymTable->buckets[i]; n != NULL; n = n->next) {
             		Symbol *s = n->value;
 
             		printf("Name: %s | Type: %s | Scope: %d | Line: %d | Active: %d\n", s->name, s->type, s->scope, s->line, s->isActive);
-        	}
+		}
 	}
-    }
 }
