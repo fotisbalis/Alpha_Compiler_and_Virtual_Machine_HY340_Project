@@ -4,7 +4,6 @@
 #include "symbol_table.h"
 
 #define HASH_SIZE 509
-#define MAX_SCOPE 100
 
 typedef struct node {
 	char *key;
@@ -21,14 +20,27 @@ int SymTable_hash(char *key) {
 	int i, hash = 0;
 
 	for(i = 0; key[i] != '\0'; i++) {
-		hash = hash * HASH_SIZE + key[i];
+		hash = hash * 65599 + key[i];
 	}
 
 	return hash % HASH_SIZE;
 }
 
+Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive){
+	Symbol* sym = malloc(sizeof(Symbol));
+    	sym->name = strdup(name);
+    	sym->type = strdup(type);
+    	sym->scope = scope;
+    	sym->line = line;
+
+	assert(isActive == 0 || isActive == 1);
+    	sym->isActive = isActive;
+    
+	return sym;
+}
+
 /* Create table */
-SymTable_T SymTable_new(void){
+SymTable_T SymTable_create(void){
 	SymTable_T newSymTable = malloc(sizeof(*newSymTable));
 
 	/* Allocate the memory for 509 buckets initially */
@@ -43,11 +55,35 @@ SymTable_T SymTable_new(void){
 	return newSymTable;
 }
 
+/* Free table */
+void SymTable_free(SymTable_T oSymTable){
+	node *n, *tmp;
+	int i;
+
+    	for(i = 0; i < HASH_SIZE; i++){
+        	n = oSymTable->buckets[i];
+       	 	while(n){
+            		tmp = n;
+            		n = n->next;
+
+            		free(tmp->key);
+            		free(tmp->value->name);
+            		free(tmp->value->type);
+            		free(tmp->value);
+            		free(tmp);
+        	}
+    	}
+
+	free(oSymTable->buckets);
+    	free(oSymTable);
+}
+
 /* Insert */
 void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 	node *n, *new;
 	int index;
 	char name_scope[1000];
+	Symbol *s;
 	
 	sprintf(name_scope, "%s%d", sym->name, sym->scope);
 
@@ -60,20 +96,28 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 		if(strcmp(name_scope, n->key) == 0 && n->value->isActive) return;
 	}
 
-	/* Add new the new element at the start of the bucket */
+	s = malloc(sizeof(Symbol));
+	s->name = strdup(sym->name);
+    	s->type = strdup(sym->type);
+    	s->scope = sym->scope;
+    	s->line = sym->line;
+    	s->isActive = sym->isActive;
+	
+	/* Add new the new symbol at the start of the bucket */
 	new = (node*)malloc(sizeof(node));
 	new->key = strdup(name_scope);
-	new->value = sym;
+	new->value = s;
+
 	new->next = oSymTable->buckets[index];
 	oSymTable->buckets[index] = new;
 }
 
-Symbol* SymTable_lookup(SymTable_T oSymTable, char *name){
+Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope){
 	char name_scope[1000];
 	int i, index;
 	node *n;
 
-	for(i = MAX_SCOPE; i >= 0; i--){ 
+	for(i = current_scope; i >= 0; i--){ 
         	sprintf(name_scope, "%s%d", name, i);
 
 		index = SymTable_hash(name_scope);

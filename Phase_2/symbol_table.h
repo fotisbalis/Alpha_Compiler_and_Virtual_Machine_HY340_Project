@@ -11,13 +11,15 @@ typedef struct Symbol {
 	int isActive;	
 } Symbol;
 
-SymTable_T SymTable_new(void);
+Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive);
 
-/*void SymTable_free(SymTable_T oSymTable);*/
+SymTable_T SymTable_create(void);
+
+void SymTable_free(SymTable_T oSymTable);
 
 void SymTable_put(SymTable_T oSymTable, Symbol* sym);
 
-Symbol* SymTable_lookup(SymTable_T oSymTable, char *name);
+Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope);
 
 Symbol* SymTable_lookup_scope(SymTable_T oSymTable, char *name, int scope);
 
