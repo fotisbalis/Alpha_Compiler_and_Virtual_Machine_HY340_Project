@@ -12,7 +12,7 @@ Token t;
 
 SymTable_T sym_table;
 int current_scope = 0, loop_depth = 0, function_depth = 0;
-
+char* current_lvalue = NULL;
 
 int yylex(void) {
 	return alpha_yylex(&t);
@@ -79,12 +79,16 @@ primary:
 
 lvalue:
 	ID { /* add in current scope */
+		current_lvalue = $1;
+
 		if(SymTable_lookup_scope(sym_table, $1, current_scope) == NULL){
 			Symbol* s = Symbol_create($1, "variable", current_scope, t.line, 1);
             		SymTable_put(sym_table, s);
 		}
 	}
 	| LOCAL ID { /* check for declaration then add */
+		current_lvalue = $2;
+
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
                 
 		if(s != NULL){
@@ -97,6 +101,8 @@ lvalue:
                 }
         } 
 	| DOUBLE_COLON ID { /* lookup in scope 0 */
+		current_lvalue = $2;
+
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, 0);
 
 		if(s == NULL){
@@ -113,14 +119,14 @@ member:
 call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     | lvalue callsuffix { /* check if symbol used as function is in the symbol table and if it is a function */
-	Symbol* s = SymTable_lookup(sym_table, $1, current_scope);
+	Symbol* s = SymTable_lookup(sym_table, current_lvalue, current_scope);
 
 	if(s == NULL){
-        	printf("Error: undefined function %s at line %d\n", $1, t.line);
+        	printf("Error: undefined function %s at line %d\n", current_lvalue, t.line);
 	}
 
 	if(strcmp(s->type, "function") != 0){
-		printf("Error: %s %s incorrectly used as function at line %d\n", s->type, $1, t.line);
+		printf("Error: %s %s incorrectly used as function at line %d\n", s->type, current_lvalue, t.line);
     
 	}
     }
