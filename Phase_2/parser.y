@@ -79,18 +79,20 @@ primary:
 
 lvalue:
 	ID { /* add in current scope */
-		current_lvalue = $1;
-
-		if(SymTable_lookup_scope(sym_table, $1, current_scope) == NULL){
-			Symbol* s = Symbol_create($1, "variable", current_scope, t.line, 1);
+		Symbol *s = SymTable_lookup_scope(sym_table, $1, current_scope);
+		
+		if(s == NULL){
+			s = Symbol_create($1, "variable", current_scope, t.line, 1);
             		SymTable_put(sym_table, s);
+		}
+
+		else if(s != NULL && strcmp(s->type, "function") == 0){
+			current_lvalue = $1;
 		}
 	}
 	| LOCAL ID { /* check for declaration then add */
-		current_lvalue = $2;
-
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
-                
+
 		if(s != NULL){
                         printf("Error: redeclaration of local variable %s at line %d\n", $2, t.line);
                 }
@@ -101,8 +103,6 @@ lvalue:
                 }
         } 
 	| DOUBLE_COLON ID { /* lookup in scope 0 */
-		current_lvalue = $2;
-
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, 0);
 
 		if(s == NULL){
@@ -119,15 +119,18 @@ member:
 call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     | lvalue callsuffix { /* check if symbol used as function is in the symbol table and if it is a function */
-	Symbol* s = SymTable_lookup(sym_table, current_lvalue, current_scope);
+	if(current_lvalue != NULL){
+		Symbol* s = SymTable_lookup(sym_table, current_lvalue, current_scope);
 
-	if(s == NULL){
-        	printf("Error: undefined function %s at line %d\n", current_lvalue, t.line);
-	}
+		if(s == NULL){
+        		printf("Error: undefined function %s at line %d\n", current_lvalue, t.line);
+		}
 
-	if(strcmp(s->type, "function") != 0){
-		printf("Error: %s %s incorrectly used as function at line %d\n", s->type, current_lvalue, t.line);
-    
+		else if(s != NULL && strcmp(s->type, "function") != 0){
+			printf("Error: %s %s incorrectly used as function at line %d\n", s->type, current_lvalue, t.line);
+		}
+
+		current_lvalue = NULL;
 	}
     }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
@@ -146,7 +149,7 @@ methodcall:
 ;
 
 elist:
-     expr | elist COMMA expr 
+     expr | elist COMMA expr | /* empty */
 ;
 
 objectdef:
@@ -169,7 +172,7 @@ block:
 	LEFT_BRACE {
 		current_scope++;
 	} 	
-	stmt 
+	statement 
 	RIGHT_BRACE {	
 		SymTable_hide_scope(sym_table, current_scope); 
 		current_scope--;
@@ -181,7 +184,7 @@ funcdef:
 		if(SymTable_lookup_scope(sym_table, $2, current_scope) == NULL){
 			Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1);
 			SymTable_put(sym_table, s);
-			current_scope++;
+
                 	function_depth++;
 		}
 		else {
@@ -191,7 +194,7 @@ funcdef:
 	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
 	block {
 		SymTable_hide_scope(sym_table, current_scope);
-		current_scope--;
+
 		function_depth--;
 	}
 ;
