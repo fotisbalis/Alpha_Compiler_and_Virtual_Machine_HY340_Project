@@ -5,6 +5,8 @@ function dd(a, b) {
     return a + b;
 }
 
+local c;
+
 x = 10;
 y = 20.5;
 z = x + y * 2;
@@ -23,4 +25,4 @@ for (i, j; i < 10; j++) {
     break;
 }
 
-local temp;
+local c;

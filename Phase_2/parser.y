@@ -11,7 +11,8 @@ extern int alpha_yylex(Token *token);
 Token t;
 
 SymTable_T sym_table;
-int current_scope = 0;
+int current_scope = 0, loop_depth = 0, function_depth = 0;
+
 
 int yylex(void) {
 	return alpha_yylex(&t);
@@ -46,7 +47,14 @@ statement:
 	 stmt statement | LINE_COMMENT statement | BLOCK_COMMENT statement | /* empty */
 
 stmt:
-    expr SEMI_COLON | ifstmt | whilestmt | forstmt | returnstmt | BREAK SEMI_COLON | CONTINUE SEMI_COLON | block | funcdef | SEMI_COLON
+	expr SEMI_COLON | ifstmt | whilestmt | forstmt | returnstmt
+	| BREAK SEMI_COLON {
+		if(loop_depth == 0) printf("Error: break called outside of loop at line %d\n", t.line);	
+	}
+	| CONTINUE SEMI_COLON {
+                if(loop_depth == 0) printf("Error: continue called outside of loop at line %d\n", t.line);
+	}
+	| block | funcdef | SEMI_COLON
 ;
 
 expr:
@@ -70,19 +78,32 @@ primary:
 ;
 
 lvalue:
-	ID { /* add id to symbol table */
+	ID { /* add in current scope */
 		if(SymTable_lookup_scope(sym_table, $1, current_scope) == NULL){
 			Symbol* s = Symbol_create($1, "variable", current_scope, t.line, 1);
-			SymTable_put(sym_table, s);
+            		SymTable_put(sym_table, s);
 		}
 	}
-	| LOCAL ID {
-                if(SymTable_lookup_scope(sym_table, $2, current_scope) == NULL){
-                        Symbol* s = Symbol_create($2, "local variable", current_scope, t.line, 1);
-                        SymTable_put(sym_table, s);
+	| LOCAL ID { /* check for declaration then add */
+		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
+                
+		if(s != NULL){
+                        printf("Error: redeclaration of local variable %s at line %d\n", $2, t.line);
+                }
+
+                else {
+                        Symbol* new_s = Symbol_create($2, "local variable", current_scope, t.line, 1);
+                        SymTable_put(sym_table, new_s);
                 }
         } 
-	| DOUBLE_COLON ID | member
+	| DOUBLE_COLON ID { /* lookup in scope 0 */
+		Symbol* s = SymTable_lookup_scope(sym_table, $2, 0);
+
+		if(s == NULL){
+			printf("Error: undefined global variable %s at line %d\n", $2, t.line);
+		}
+	}
+	| member
 ;
 
 member:
@@ -90,7 +111,20 @@ member:
 ;
 
 call:
-    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS | lvalue callsuffix | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    | lvalue callsuffix { /* check if symbol used as function is in the symbol table and if it is a function */
+	Symbol* s = SymTable_lookup(sym_table, $1, current_scope);
+
+	if(s == NULL){
+        	printf("Error: undefined function %s at line %d\n", $1, t.line);
+	}
+
+	if(strcmp(s->type, "function") != 0){
+		printf("Error: %s %s incorrectly used as function at line %d\n", s->type, $1, t.line);
+    
+	}
+    }
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
 ;
 
 callsuffix:
@@ -128,7 +162,6 @@ indexedelem:
 block:
 	LEFT_BRACE {
 		current_scope++;
-		SymTable_unhide_scope(sym_table, current_scope);
 	} 	
 	stmt 
 	RIGHT_BRACE {	
@@ -140,15 +173,20 @@ block:
 funcdef:
        FUNCTION ID {
 		if(SymTable_lookup_scope(sym_table, $2, current_scope) == NULL){
-			Symbol* s_func = Symbol_create($2, "function", current_scope, t.line, 1);
-			SymTable_put(sym_table, s_func);
+			Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1);
+			SymTable_put(sym_table, s);
+			current_scope++;
+                	function_depth++;
 		}
-		current_scope++;
+		else {
+			printf("Error: redeclaration of function %s at line %d\n", $2, t.line);
+		}
 	}
 	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
 	block {
 		SymTable_hide_scope(sym_table, current_scope);
 		current_scope--;
+		function_depth--;
 	}
 ;
 
@@ -181,15 +219,22 @@ elsestmt:
 ;
 
 whilestmt:
-	 WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt
+	 WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
+        { loop_depth++; }
+        stmt
+        { loop_depth--; }
 ;
 
 forstmt:
-       FOR LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON elist RIGHT_PARENTHESIS stmt
+	FOR LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON elist RIGHT_PARENTHESIS 
+	{ loop_depth++; }
+	stmt
+	{ loop_depth--; }
 ;
 
 returnstmt:
-	  RETURN returnvalue SEMI_COLON
+	  RETURN returnvalue SEMI_COLON 
+	{ if(function_depth == 0) printf("Error: return called outside of function at line %d\n", t.line); }
 ;
 
 returnvalue:
