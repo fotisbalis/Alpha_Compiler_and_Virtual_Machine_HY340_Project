@@ -14,6 +14,10 @@ SymTable_T sym_table;
 int current_scope = 0, loop_depth = 0, function_depth = 0;
 char* current_lvalue = NULL;
 
+void print_reduce(char *a, char* b){
+	printf("%s -> %s\n", a, b);
+}
+
 int yylex(void) {
 	return alpha_yylex(&t);
 }
@@ -40,41 +44,77 @@ void yyerror(const char *s);
 %%
 
 program:
-       statement
+       statement { print_reduce("program", "statement"); }
 ;
 
 statement:
-	 stmt statement | LINE_COMMENT statement | BLOCK_COMMENT statement | /* empty */
+	 stmt statement { print_reduce("statement", "stmt statement"); } 
+	| LINE_COMMENT statement { print_reduce("statement", "LINE_COMMENT statement"); }
+	| BLOCK_COMMENT statement { print_reduce("statement", "BLOCK_COMMENT statement"); }
+	| /* empty */ { print_reduce("statement", "empty"); }
 
 stmt:
-	expr SEMI_COLON | ifstmt | whilestmt | forstmt | returnstmt
+	expr SEMI_COLON { print_reduce("stmt", "expr SEMI_COLON"); }
+	| ifstmt { print_reduce("stmt", "ifstmt"); }
+	| whilestmt { print_reduce("stmt", "ifstmt"); }
+	| forstmt { print_reduce("stmt", "forstmt"); }
+	| returnstmt { print_reduce("stmt", "returnstmt"); }
 	| BREAK SEMI_COLON {
 		if(loop_depth == 0) printf("Error: break called outside of loop at line %d\n", t.line);	
+		print_reduce("stmt", "returnstmt");
 	}
 	| CONTINUE SEMI_COLON {
                 if(loop_depth == 0) printf("Error: continue called outside of loop at line %d\n", t.line);
+		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
-	| block | funcdef | SEMI_COLON
+	| block { print_reduce("stmt", "block"); }
+	| funcdef { print_reduce("stmt", "funcdef"); }
+	| SEMI_COLON { print_reduce("stmt", "SEMI_COLON"); }
 ;
 
 expr:
-    assignexpr | expr op expr | term
+	assignexpr { print_reduce("expr", "assignexpr"); }
+	| expr op expr { print_reduce("expr", "expr op expr"); }
+	| term { print_reduce("expr", "term"); }
 ;
 
 op:
-  PLUS | MINUS | MULTIPLY | DIVISION | MOD | GREATER | GREATER_EQUAL | LESS | LESS_EQUAL | EQUAL | NOT_EQUAL | AND | OR
+	PLUS { print_reduce("op", "PLUS"); }
+	| MINUS { print_reduce("op", "MINUS"); }
+	| MULTIPLY { print_reduce("op", "MULTIPLY"); }
+	| DIVISION { print_reduce("op", "DIVISION"); }
+	| MOD { print_reduce("op", "MOD"); }
+	| GREATER { print_reduce("op", "GREATER"); }
+	| GREATER_EQUAL { print_reduce("op", "GREATER_EQUAL"); }
+	| LESS { print_reduce("op", "LESS"); }
+	| LESS_EQUAL { print_reduce("op", "LESS_EQUAL"); }
+	| EQUAL { print_reduce("op", "EQUAL"); }
+	| NOT_EQUAL { print_reduce("op", "NOT_EQUAL"); }
+	| AND { print_reduce("op", "AND"); }
+	| OR { print_reduce("op", "OR"); }
 ;
 
 term:
-    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS | MINUS expr | NOT expr | PLUS_PLUS lvalue | lvalue PLUS_PLUS | MINUS_MINUS lvalue | lvalue MINUS_MINUS | primary
+    	LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { print_reduce("term", "LEFT_PARENTHESIS expr RIGHT_PARENTHESIS"); }
+	| MINUS expr { print_reduce("term", "MINUS expr"); }
+	| NOT expr { print_reduce("term", "NOT expr"); }
+	| PLUS_PLUS lvalue { print_reduce("term", "PLUS_PLUS lvalue"); }
+	| lvalue PLUS_PLUS { print_reduce("term", "lvalue PLUS_PLUS"); }
+	| MINUS_MINUS lvalue { print_reduce("term", "MINUS_MINUS lvalue"); }
+	| lvalue MINUS_MINUS { print_reduce("term", "lvalue MINUS_MINUS"); }
+	| primary { print_reduce("term", "primary"); }
 ;
 
 assignexpr:
-	  lvalue ASSIGN expr
+	  lvalue ASSIGN expr { print_reduce("assignexpr", "lvalue ASSIGN expr"); }
 ;
 
 primary:
-       lvalue | call | objectdef | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS | const
+       	lvalue { print_reduce("primary", "lvalue"); }
+	| call { print_reduce("primary", "call"); }
+	| objectdef { print_reduce("primary", "objectdef"); }
+	| LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { print_reduce("primary", "LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS"); } 
+	| const { print_reduce("primary", "const"); }
 ;
 
 lvalue:
@@ -89,6 +129,8 @@ lvalue:
 		else if(s != NULL && strcmp(s->type, "function") == 0){
 			current_lvalue = $1;
 		}
+
+		{ print_reduce("lvalue", "ID"); }
 	}
 	| LOCAL ID { /* check for declaration then add */
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
@@ -101,6 +143,8 @@ lvalue:
                         Symbol* new_s = Symbol_create($2, "local variable", current_scope, t.line, 1);
                         SymTable_put(sym_table, new_s);
                 }
+
+		{ print_reduce("lvalue", "LOCAL ID"); }
         } 
 	| DOUBLE_COLON ID { /* lookup in scope 0 */
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, 0);
@@ -108,16 +152,21 @@ lvalue:
 		if(s == NULL){
 			printf("Error: undefined global variable %s at line %d\n", $2, t.line);
 		}
+
+		{ print_reduce("lvalue", "DOUBLE_COLONID"); }
 	}
-	| member
+	| member { print_reduce("lvalue", "member"); }
 ;
 
 member:
-      lvalue DOT ID | lvalue LEFT_BRACKET expr RIGHT_BRACKET | call DOT ID | call LEFT_BRACKET expr RIGHT_BRACKET
+	lvalue DOT ID { print_reduce("member", "lvalue DOT ID"); }
+	| lvalue LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "lvalue LEFT_BRACKET expr RIGHT_BRACKET"); }
+	| call DOT ID { print_reduce("member", "call DOT ID"); }
+	| call LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "call LEFT_BRACKET expr RIGHT_BRACKET"); }
 ;
 
 call:
-    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("call", "call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
     | lvalue callsuffix { /* check if symbol used as function is in the symbol table and if it is a function */
 	if(current_lvalue != NULL){
 		Symbol* s = SymTable_lookup(sym_table, current_lvalue, current_scope);
@@ -132,40 +181,49 @@ call:
 
 		current_lvalue = NULL;
 	}
+
+	{ print_reduce("call", "lvalue callsuffix"); }
     }
-    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { 
+	print_reduce("call", "LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS");
+    }
 ;
 
 callsuffix:
-	  normcall | methodcall
+	normcall { print_reduce("callsuffix", "normcall"); }
+	| methodcall { print_reduce("callsuffix", "methodcall"); }
 ;
 
 normcall:
-	LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+	LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("normcall", "LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
 ;
 
 methodcall:
-	  DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+	  DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("methodcall", "DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
 ;
 
 elist:
-     expr | elist COMMA expr | /* empty */
+	expr { print_reduce("elist", "expr"); }
+	| elist COMMA expr { print_reduce("elist", "elist COMMA expr"); }
+	| /* empty */ { print_reduce("elist", "empty"); }
 ;
 
 objectdef:
-	 LEFT_BRACKET obj RIGHT_BRACKET
+	 LEFT_BRACKET obj RIGHT_BRACKET { print_reduce("objectdef", "LEFT_BRACKET obj RIGHT_BRACKET"); }
 ;
 
 obj:
-   elist | indexed
+	elist { print_reduce("obj", "elist"); }
+	| indexed { print_reduce("obj", "indexed"); }
 ;
 
 indexed:
-       indexedelem | indexed COMMA indexedelem
+	indexedelem { print_reduce("indexed", "indexedelem"); }
+	| indexed COMMA indexedelem { print_reduce("indexed", "indexed COMMA indexedelem"); }
 ;
 
 indexedelem:
-	   LEFT_BRACE expr COLON expr RIGHT_BRACE
+	   LEFT_BRACE expr COLON expr RIGHT_BRACE { print_reduce("indexedelem", "LEFT_BRACE expr COLON expr RIGHT_BRACE"); }
 ;
 
 block:
@@ -176,6 +234,8 @@ block:
 	RIGHT_BRACE {	
 		SymTable_hide_scope(sym_table, current_scope); 
 		current_scope--;
+
+		print_reduce("block", "LEFT_BRACE statement RIGHT_BRACE");
 	}
 ;
 
@@ -196,11 +256,18 @@ funcdef:
 		SymTable_hide_scope(sym_table, current_scope);
 
 		function_depth--;
+
+		print_reduce("funcdef", "FUNCTION ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
 	}
 ;
 
 const:
-     CONST_INT | CONST_REAL | STRING | NIL | TRUE | FALSE
+   	CONST_INT { print_reduce("const", "CONST_INT"); }
+	| CONST_REAL { print_reduce("const", "CONST_REAL"); }
+	| STRING { print_reduce("const", "STRING"); }
+	| NIL { print_reduce("const", "NIL"); }
+	| TRUE { print_reduce("const", "TRUE"); }
+	| FALSE { print_reduce("const", "FALSE"); }
 ;
 
 idlist:
@@ -209,45 +276,62 @@ idlist:
 			Symbol* s = Symbol_create($1, "parameter", current_scope, t.line, 1);
            		SymTable_put(sym_table, s); 
 		}
+
+		print_reduce("idlist", "ID");
 	}
 	| idlist COMMA ID {
 		if(SymTable_lookup_scope(sym_table, $3, current_scope) == NULL){
 			Symbol* s = Symbol_create($3, "parameter", current_scope, t.line, 1);
                 	SymTable_put(sym_table, s);
 		}
+
+		print_reduce("idlist", "idlist COMMA ID");
         }
-	| /* empty */
+	| /* empty */ { print_reduce("idlist", "empty"); }
 ;
 
 ifstmt:
-	IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt
+	IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt { print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt"); }
 ;
 
 elsestmt:
-	ELSE stmt | /* empty */
+	ELSE stmt { print_reduce("elsestmt", "ELSE stmt"); }
+	| /* empty */ { print_reduce("elsestmt", "empty"); }
 ;
 
 whilestmt:
 	 WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
         { loop_depth++; }
         stmt
-        { loop_depth--; }
+        { 
+		loop_depth--; 
+		
+		print_reduce("whilestmt", "WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt");
+	}
 ;
 
 forstmt:
 	FOR LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON elist RIGHT_PARENTHESIS 
 	{ loop_depth++; }
 	stmt
-	{ loop_depth--; }
+	{ 
+		loop_depth--; 
+
+		print_reduce("forstmt", "FOR LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON elist RIGHT_PARENTHESIS");
+	}
 ;
 
 returnstmt:
-	  RETURN returnvalue SEMI_COLON 
-	{ if(function_depth == 0) printf("Error: return called outside of function at line %d\n", t.line); }
+	RETURN returnvalue SEMI_COLON {
+		if(function_depth == 0) printf("Error: return called outside of function at line %d\n", t.line); 
+
+		print_reduce("returnstmt", "RETURN returnvalue SEMI_COLON");
+	}
 ;
 
 returnvalue:
-	   expr | /* empty */
+	expr { print_reduce("returnvalue", "expr"); }
+	| /* empty */ { print_reduce("returnvalue", "empty"); }
 ;
 
 %%
