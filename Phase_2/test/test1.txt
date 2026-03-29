@@ -1,7 +1,7 @@
 // Single line comment
 /* Block comment with
    multiple lines */
-function dd(a, b) {
+function add(a, b) {
     return a + b;
 }
 
@@ -12,6 +12,7 @@ y = 20.5;
 z = x + y * 2;
 
 if (x > 0) {
+    local y;
     y = y - 1;
 } else {
     y = y + 1;

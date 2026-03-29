@@ -19,7 +19,8 @@ struct SymTable{
 };
 
 int SymTable_hash(char *key) {
-	int i, hash = 0;
+	unsigned long hash = 0;
+	int i;
 
 	for(i = 0; key[i] != '\0'; i++) {
 		hash = hash * 65599 + key[i];
@@ -129,7 +130,7 @@ Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope){
 		index = SymTable_hash(name_scope);
 		
 		for(n = oSymTable->buckets[index]; n != NULL; n = n->next){
-			if(strcmp(name_scope, n->key) == 0 && n->value->isActive) 
+			if(strcmp(name_scope, n->key) == 0) 
 				return n->value;
 		}
 	}
@@ -147,7 +148,7 @@ Symbol* SymTable_lookup_scope(SymTable_T oSymTable, char *name, int scope){
  	index = SymTable_hash(name_scope);
 	
 	for(n = oSymTable->buckets[index]; n != NULL; n = n->next){
-		if(strcmp(name_scope, n->key) == 0 && n->value->isActive) 
+		if(strcmp(name_scope, n->key) == 0) 
 			return n->value;
 	}
 
