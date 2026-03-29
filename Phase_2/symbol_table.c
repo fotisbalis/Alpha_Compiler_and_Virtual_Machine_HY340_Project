@@ -5,6 +5,8 @@
 
 #define HASH_SIZE 509
 
+int max_scope = 0;
+
 typedef struct node {
 	char *key;
 	Symbol *value;
@@ -87,6 +89,8 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 	char name_scope[1000];
 	Symbol *s;
 	
+	if(sym->scope > max_scope) max_scope = sym->scope;
+
 	sprintf(name_scope, "%s%d", sym->name, sym->scope);
 
 	index = SymTable_hash(name_scope);
@@ -178,14 +182,19 @@ void SymTable_unhide_scope(SymTable_T oSymTable, int scope){
 
 void SymTable_print(SymTable_T oSymTable){
 	node *n;
+	int i, j;
 
-	printf("\n--- SYMBOL TABLE ---\n");
-
-    	for (int i = 0; i < HASH_SIZE; i++) {
-        	for(n = oSymTable->buckets[i]; n != NULL; n = n->next) {
-            		Symbol *s = n->value;
-
-            		printf("Name: %s | Type: %s | Scope: %d | Line: %d | Active: %d\n", s->name, s->type, s->scope, s->line, s->isActive);
+	for(i = 0; i <= max_scope; i++) {
+	printf("\n--------- scope #%d ---------\n", i);
+		
+    		for(j = 0; j < HASH_SIZE; j++) {
+        		for(n = oSymTable->buckets[j]; n != NULL; n = n->next) {
+            			Symbol *s = n->value;
+				
+				if(s->scope == i){
+            				printf("\"%s\" [%s]  (line %d) (scope %d)\n", s->name, s->type, s->line, s->scope);
+				}
+			}
 		}
 	}
 }

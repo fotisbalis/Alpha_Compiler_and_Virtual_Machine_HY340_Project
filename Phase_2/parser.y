@@ -337,7 +337,7 @@ returnvalue:
 %%
 
 int main(int argc, char **argv) {
-	
+
 	assert(argc == 2);
 
 	yyin = fopen(argv[1], "r");
@@ -346,7 +346,21 @@ int main(int argc, char **argv) {
 	printf("Parsing started.\n");
 
 	sym_table = SymTable_create();
-	
+
+	/* library functions */
+	SymTable_put(sym_table, Symbol_create("print", "library function", 0, 0, 1));
+	SymTable_put(sym_table, Symbol_create("input", "library function", 0, 0, 1));
+	SymTable_put(sym_table, Symbol_create("objectmemberkeys", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("objecttotalmembers", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("objectcopy", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("totalarguments", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("argument", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("typeof", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("strtonum", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("sqrt", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("cos", "library function", 0, 0, 1));
+        SymTable_put(sym_table, Symbol_create("sin", "library function", 0, 0, 1));
+
 	if(yyparse() != 0) {
         	SymTable_free(sym_table);
         	return 1;
