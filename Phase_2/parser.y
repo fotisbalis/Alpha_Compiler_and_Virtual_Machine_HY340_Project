@@ -41,17 +41,30 @@ void yyerror(const char *s);
 %token <realVal> CONST_REAL
 %token <idVal> ID
 
+%left OR
+%left AND
+%left EQUAL NOT_EQUAL
+%left LESS LESS_EQUAL GREATER GREATER_EQUAL
+%left PLUS MINUS
+%left MULTIPLY DIVISION MOD
+%right NOT
+%right UMINUS
+%right ASSIGN
+%left DOT
+%left LEFT_BRACKET RIGHT_BRACKET
+%nonassoc IFX
+
 %%
 
 program:
-       statement { print_reduce("program", "statement"); }
+       statements { print_reduce("program", "statement"); }
 ;
 
-statement:
-	 stmt statement { print_reduce("statement", "stmt statement"); } 
-	| LINE_COMMENT statement { print_reduce("statement", "LINE_COMMENT statement"); }
-	| BLOCK_COMMENT statement { print_reduce("statement", "BLOCK_COMMENT statement"); }
-	| /* empty */ { print_reduce("statement", "empty"); }
+statements:
+	/* empty */ { print_reduce("statement", "empty"); }
+	| stmt statements { print_reduce("statement", "stmt statement"); } 
+	| LINE_COMMENT statements { print_reduce("statement", "LINE_COMMENT statement"); }
+	| BLOCK_COMMENT statements { print_reduce("statement", "BLOCK_COMMENT statement"); }
 
 stmt:
 	expr SEMI_COLON { print_reduce("stmt", "expr SEMI_COLON"); }
@@ -96,7 +109,7 @@ op:
 
 term:
     	LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { print_reduce("term", "LEFT_PARENTHESIS expr RIGHT_PARENTHESIS"); }
-	| MINUS expr { print_reduce("term", "MINUS expr"); }
+	| MINUS expr %prec UMINUS { print_reduce("term", "MINUS expr"); }
 	| NOT expr { print_reduce("term", "NOT expr"); }
 	| PLUS_PLUS lvalue { print_reduce("term", "PLUS_PLUS lvalue"); }
 	| lvalue PLUS_PLUS { print_reduce("term", "lvalue PLUS_PLUS"); }
@@ -109,7 +122,7 @@ assignexpr:
 	lvalue ASSIGN expr { 
 		if(current_lvalue != NULL){
 			if(strcmp(current_lvalue->type, "function") == 0) {
-				printf("ERROR: assign to function \"%s\"\n", current_lvalue->name);	
+				printf("ERROR: assign to function \"%s\" at line %d\n", current_lvalue->name, t.line);	
 			}
 		}
 
@@ -127,6 +140,7 @@ primary:
 
 lvalue:
 	ID { /* add in current scope */
+		current_lvalue = NULL;
 		Symbol *s = SymTable_lookup(sym_table, $1, current_scope, function_depth, function_scopes);
 		Symbol* lib = SymTable_lookup_scope(sym_table, $1, 0);
 
@@ -143,6 +157,15 @@ lvalue:
             		SymTable_put(sym_table, s);
 		}
 
+		/* if its inside a function and not from function scope or a global variable, then error */
+		else if(s != NULL && function_depth >= 0){
+
+			if(s->scope > 0 && s->scope != function_scopes[function_depth]){ 
+				printf("ERROR: use of variable \"%s\" from outer function scope at line %d\n", s->name, t.line);
+			}
+		}
+
+		/* if it is a function */
 		else if(s != NULL && strcmp(s->type, "function") == 0){
 			current_lvalue = s;
 		}
@@ -252,7 +275,7 @@ block:
 	LEFT_BRACE {
 		current_scope++;
 	} 	
-	statement 
+	statements 
 	RIGHT_BRACE {	
 		SymTable_hide_scope(sym_table, current_scope); 
 		current_scope--;
@@ -286,7 +309,7 @@ funcdef:
 		}
 	}
 	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
-	LEFT_BRACE statement RIGHT_BRACE {
+	LEFT_BRACE statements RIGHT_BRACE {
 		if(function_started == 1){
 			SymTable_hide_scope(sym_table, current_scope);
 			current_scope--;
@@ -328,12 +351,12 @@ idlist:
 ;
 
 ifstmt:
-	IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt { print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt"); }
+	IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt %prec IFX { print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt"); }
+	| IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt { print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt"); }
 ;
 
 elsestmt:
 	ELSE stmt { print_reduce("elsestmt", "ELSE stmt"); }
-	| /* empty */ { print_reduce("elsestmt", "empty"); }
 ;
 
 whilestmt:

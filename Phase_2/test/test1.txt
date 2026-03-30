@@ -5,6 +5,8 @@ function add(a, b) {
     return a + b;
 }
 
+add = 5;
+
 cos;
 local c;
 local cos;
