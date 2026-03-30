@@ -11,8 +11,8 @@ extern int alpha_yylex(Token *token);
 Token t;
 
 SymTable_T sym_table;
-int current_scope = 0, loop_depth = 0, function_depth = 0;
-char* current_lvalue = NULL;
+int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100];
+char* current_lvalue = NULL; 
 
 void print_reduce(char *a, char* b){
 	printf("%s -> %s\n", a, b);
@@ -60,11 +60,11 @@ stmt:
 	| forstmt { print_reduce("stmt", "forstmt"); }
 	| returnstmt { print_reduce("stmt", "returnstmt"); }
 	| BREAK SEMI_COLON {
-		if(loop_depth == 0) printf("Error: break called outside of loop at line %d\n", t.line);	
+		if(loop_depth == -1) printf("Error: break called outside of loop at line %d\n", t.line);	
 		print_reduce("stmt", "returnstmt");
 	}
 	| CONTINUE SEMI_COLON {
-                if(loop_depth == 0) printf("Error: continue called outside of loop at line %d\n", t.line);
+                if(loop_depth == -1) printf("Error: continue called outside of loop at line %d\n", t.line);
 		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
 	| block { print_reduce("stmt", "block"); }
@@ -119,7 +119,7 @@ primary:
 
 lvalue:
 	ID { /* add in current scope */
-		Symbol *s = SymTable_lookup_scope(sym_table, $1, current_scope);
+		Symbol *s = SymTable_lookup(sym_table, $1, current_scope, function_depth, function_scopes);
 		
 		if(s == NULL){
 			s = Symbol_create($1, "variable", current_scope, t.line, 1);
@@ -246,6 +246,7 @@ funcdef:
 			SymTable_put(sym_table, s);
 
                 	function_depth++;
+			function_scopes[function_depth] = current_scope;
 		}
 		else {
 			printf("Error: redeclaration of function %s at line %d\n", $2, t.line);
@@ -323,7 +324,7 @@ forstmt:
 
 returnstmt:
 	RETURN returnvalue SEMI_COLON {
-		if(function_depth == 0) printf("Error: return called outside of function at line %d\n", t.line); 
+		if(function_depth == -1) printf("Error: return called outside of function at line %d\n", t.line); 
 
 		print_reduce("returnstmt", "RETURN returnvalue SEMI_COLON");
 	}

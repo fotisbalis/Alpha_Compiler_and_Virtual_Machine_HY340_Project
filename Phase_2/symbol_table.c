@@ -119,37 +119,58 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 	oSymTable->buckets[index] = new;
 }
 
-Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope){
-	char name_scope[1000];
-	int i, index;
-	node *n;
-
-	for(i = current_scope; i >= 0; i--){ 
-        	sprintf(name_scope, "%s%d", name, i);
-
-		index = SymTable_hash(name_scope);
-		
-		for(n = oSymTable->buckets[index]; n != NULL; n = n->next){
-			if(strcmp(name_scope, n->key) == 0) 
-				return n->value;
-		}
-	}
-
-	return NULL;
-}
-
 Symbol* SymTable_lookup_scope(SymTable_T oSymTable, char *name, int scope){
-	char name_scope[1000];
+        char name_scope[1000];
         int index;
         node *n;
 
-	sprintf(name_scope, "%s%d", name, scope);
+        sprintf(name_scope, "%s%d", name, scope);
 
- 	index = SymTable_hash(name_scope);
-	
-	for(n = oSymTable->buckets[index]; n != NULL; n = n->next){
-		if(strcmp(name_scope, n->key) == 0) 
-			return n->value;
+        index = SymTable_hash(name_scope);
+
+        for(n = oSymTable->buckets[index]; n != NULL; n = n->next){
+                if(strcmp(name_scope, n->key) == 0 && n->value->isActive == 1)
+                        return n->value;
+        }
+
+        return NULL;
+}
+
+Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope, int function_depth, int* function_scopes){
+	int i, function_scope;
+	Symbol* s;
+
+	/* not functions */
+	if(function_depth == -1){
+		for(i = current_scope; i >= 0; i--){ 
+			s = SymTable_lookup_scope(oSymTable, name, i);
+			
+			if(s != NULL) return s;
+		}
+	}
+
+	/* functions */
+	else if(function_depth >= 0){
+		function_scope = function_scopes[function_depth];
+		
+		/* lookup inside the function */
+		for(i = current_scope; i > function_scope; i--){
+                        s = SymTable_lookup_scope(oSymTable, name, i);
+
+                        if(s != NULL) return s;
+                }
+
+		/* lookup in active functions */
+		for(i = (function_scope - 1); i > 0; i--){
+                        s = SymTable_lookup_scope(oSymTable, name, i);
+
+                        if(s != NULL && strcmp(s->type, "function") == 0) return s;
+                }
+
+		/* lookup in scope 0 */
+		s = SymTable_lookup_scope(oSymTable, name, 0);
+
+        	if(s != NULL) return s;
 	}
 
 	return NULL;
