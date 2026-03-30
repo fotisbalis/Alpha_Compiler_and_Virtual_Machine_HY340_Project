@@ -96,7 +96,7 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 
 	index = SymTable_hash(name_scope);
 
-	assert(oSymTable != NULL && name_scope != NULL);
+	assert(oSymTable != NULL && 0 <= index < HASH_SIZE);
 
 	/* Check if the key already exists in the bucket and return 0 if it does */
 	for(n = oSymTable->buckets[index]; n != NULL; n = n->next){
@@ -189,33 +189,19 @@ void SymTable_hide_scope(SymTable_T oSymTable, int scope){
 	}
 }
 
-void SymTable_unhide_scope(SymTable_T oSymTable, int scope){
-        node *n;
-        int i;
-
-        for(i = 0; i < HASH_SIZE; i++){
-
-                for(n = oSymTable->buckets[i]; n != NULL; n = n->next){
-                        if(n->value->scope == scope)
-                                n->value->isActive = 1;
-                }
-        }
-}
-
 void SymTable_print(SymTable_T oSymTable){
 	node *n;
 	int i, j;
 
 	for(i = 0; i <= max_scope; i++) {
-	printf("\n--------- scope #%d ---------\n", i);
+		printf("\n--------- scope #%d ---------\n", i);
 		
     		for(j = 0; j < HASH_SIZE; j++) {
         		for(n = oSymTable->buckets[j]; n != NULL; n = n->next) {
-            			Symbol *s = n->value;
+				Symbol *s = n->value;
 				
-				if(s->scope == i){
+				if(s->scope == i)
             				printf("\"%s\" [%s]  (line %d) (scope %d)\n", s->name, s->type, s->line, s->scope);
-				}
 			}
 		}
 	}

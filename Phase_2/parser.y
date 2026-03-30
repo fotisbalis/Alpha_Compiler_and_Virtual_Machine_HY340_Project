@@ -11,8 +11,8 @@ extern int alpha_yylex(Token *token);
 Token t;
 
 SymTable_T sym_table;
-int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100];
-char* current_lvalue = NULL; 
+int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100], function_started = 0;
+Symbol* current_lvalue = NULL; 
 
 void print_reduce(char *a, char* b){
 	printf("%s -> %s\n", a, b);
@@ -60,11 +60,11 @@ stmt:
 	| forstmt { print_reduce("stmt", "forstmt"); }
 	| returnstmt { print_reduce("stmt", "returnstmt"); }
 	| BREAK SEMI_COLON {
-		if(loop_depth == -1) printf("Error: break called outside of loop at line %d\n", t.line);	
+		if(loop_depth == -1) printf("ERROR: break called outside of loop at line %d\n", t.line);	
 		print_reduce("stmt", "returnstmt");
 	}
 	| CONTINUE SEMI_COLON {
-                if(loop_depth == -1) printf("Error: continue called outside of loop at line %d\n", t.line);
+                if(loop_depth == -1) printf("ERROR: continue called outside of loop at line %d\n", t.line);
 		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
 	| block { print_reduce("stmt", "block"); }
@@ -106,7 +106,15 @@ term:
 ;
 
 assignexpr:
-	  lvalue ASSIGN expr { print_reduce("assignexpr", "lvalue ASSIGN expr"); }
+	lvalue ASSIGN expr { 
+		if(current_lvalue != NULL){
+			if(strcmp(current_lvalue->type, "function") == 0) {
+				printf("ERROR: assign to function \"%s\"\n", current_lvalue->name);	
+			}
+		}
+
+		print_reduce("assignexpr", "lvalue ASSIGN expr"); 
+	}
 ;
 
 primary:
@@ -120,37 +128,51 @@ primary:
 lvalue:
 	ID { /* add in current scope */
 		Symbol *s = SymTable_lookup(sym_table, $1, current_scope, function_depth, function_scopes);
-		
-		if(s == NULL){
-			s = Symbol_create($1, "variable", current_scope, t.line, 1);
+		Symbol* lib = SymTable_lookup_scope(sym_table, $1, 0);
+
+		if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                        printf("ERROR: use of library function \"%s\" as variable at line %d\n", lib->name, t.line);
+                }
+
+		else if(s == NULL){
+			if(current_scope == 0)
+                                s = Symbol_create($1, "global variable", current_scope, t.line, 1);
+                        else
+                                s = Symbol_create($1, "variable", current_scope, t.line, 1);		
+
             		SymTable_put(sym_table, s);
 		}
 
 		else if(s != NULL && strcmp(s->type, "function") == 0){
-			current_lvalue = $1;
+			current_lvalue = s;
 		}
 
 		{ print_reduce("lvalue", "ID"); }
 	}
-	| LOCAL ID { /* check for declaration then add */
+	| LOCAL ID { /* if the symbol doesn't exist or is hidden in current scope and not library function name, then it's added */
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
+		Symbol* lib = SymTable_lookup_scope(sym_table, $2, 0);
 
-		if(s != NULL){
-                        printf("Error: redeclaration of local variable %s at line %d\n", $2, t.line);
+                if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                        printf("ERROR: use of library function \"%s\" as local at line %d\n", lib->name, t.line);
+                }
+				
+		else if(s == NULL || s->isActive == 0){
+                        if(current_scope == 0) 
+				s = Symbol_create($2, "global variable", current_scope, t.line, 1);
+			else 
+				s = Symbol_create($2, "local variable", current_scope, t.line, 1);
+                        
+			SymTable_put(sym_table, s);
                 }
 
-                else {
-                        Symbol* new_s = Symbol_create($2, "local variable", current_scope, t.line, 1);
-                        SymTable_put(sym_table, new_s);
-                }
-
-		{ print_reduce("lvalue", "LOCAL ID"); }
+		print_reduce("lvalue", "LOCAL ID");
         } 
 	| DOUBLE_COLON ID { /* lookup in scope 0 */
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, 0);
 
 		if(s == NULL){
-			printf("Error: undefined global variable %s at line %d\n", $2, t.line);
+			printf("ERROR: undefined global variable %s at line %d\n", $2, t.line);
 		}
 
 		{ print_reduce("lvalue", "DOUBLE_COLONID"); }
@@ -169,14 +191,14 @@ call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("call", "call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
     | lvalue callsuffix { /* check if symbol used as function is in the symbol table and if it is a function */
 	if(current_lvalue != NULL){
-		Symbol* s = SymTable_lookup(sym_table, current_lvalue, current_scope);
+		Symbol* s = SymTable_lookup(sym_table, current_lvalue->name, current_scope, function_depth, function_scopes);
 
 		if(s == NULL){
-        		printf("Error: undefined function %s at line %d\n", current_lvalue, t.line);
+        		printf("ERROR: undefined function %s at line %d\n", current_lvalue->name, t.line);
 		}
 
 		else if(s != NULL && strcmp(s->type, "function") != 0){
-			printf("Error: %s %s incorrectly used as function at line %d\n", s->type, current_lvalue, t.line);
+			printf("ERROR: %s %s incorrectly used as function at line %d\n", s->type, current_lvalue->name, t.line);
 		}
 
 		current_lvalue = NULL;
@@ -241,22 +263,36 @@ block:
 
 funcdef:
        FUNCTION ID {
-		if(SymTable_lookup_scope(sym_table, $2, current_scope) == NULL){
+		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
+                Symbol* lib = SymTable_lookup_scope(sym_table, $2, 0);
+
+                if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                        printf("ERROR: use of library function \"%s\" as function at line %d\n", lib->name, t.line);
+                }
+
+		else if(s != NULL && s->isActive == 1) {
+                        printf("ERROR: redeclaration of \"%s\" at line %d\n", $2, t.line);
+		}
+
+		else if(s == NULL || s->isActive == 0){
 			Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1);
 			SymTable_put(sym_table, s);
-
+			
+			current_scope++;
+	
                 	function_depth++;
 			function_scopes[function_depth] = current_scope;
-		}
-		else {
-			printf("Error: redeclaration of function %s at line %d\n", $2, t.line);
+			function_started = 1;
 		}
 	}
 	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
-	block {
-		SymTable_hide_scope(sym_table, current_scope);
-
-		function_depth--;
+	LEFT_BRACE statement RIGHT_BRACE {
+		if(function_started == 1){
+			SymTable_hide_scope(sym_table, current_scope);
+			current_scope--;
+			function_depth--;
+			function_started = 0;
+		}
 
 		print_reduce("funcdef", "FUNCTION ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
 	}
@@ -324,7 +360,7 @@ forstmt:
 
 returnstmt:
 	RETURN returnvalue SEMI_COLON {
-		if(function_depth == -1) printf("Error: return called outside of function at line %d\n", t.line); 
+		if(function_depth == -1) printf("ERROR: return called outside of function at line %d\n", t.line); 
 
 		print_reduce("returnstmt", "RETURN returnvalue SEMI_COLON");
 	}
