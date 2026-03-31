@@ -137,7 +137,7 @@ Symbol* SymTable_lookup_scope(SymTable_T oSymTable, char *name, int scope){
 }
 
 Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope, int function_depth, int* function_scopes){
-	int i, function_scope;
+	int i, function_scope, j, outer_function_scope;
 	Symbol* s;
 
 	/* not functions */
@@ -153,24 +153,27 @@ Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope, int
 	else if(function_depth >= 0){
 		function_scope = function_scopes[function_depth];
 		
-		/* lookup inside the function */
-		for(i = current_scope; i > function_scope; i--){
-                        s = SymTable_lookup_scope(oSymTable, name, i);
+		for(i = current_scope; i >= function_scope; i--){
+                        
+			s = SymTable_lookup_scope(oSymTable, name, i);
+			if(s != NULL) return s;
+		}
 
-                        if(s != NULL) return s;
-                }
+		/* for nested functions, look for locals on outer function */
+		if(function_depth > 0){
+			outer_function_scope = function_scopes[function_depth - 1];
 
-		/* lookup in active functions */
-		for(i = (function_scope - 1); i > 0; i--){
-                        s = SymTable_lookup_scope(oSymTable, name, i);
+			if((function_scope - outer_function_scope) <= 1){
+				s = SymTable_lookup_scope(oSymTable, name, outer_function_scope);
 
-                        if(s != NULL && strcmp(s->type, "function") == 0) return s;
-                }
-
-		/* lookup in scope 0 */
+				if(s != NULL && strcmp(s->type, "local variable") == 0)
+					return s;
+			}
+		}
+		
+		/* globals */
 		s = SymTable_lookup_scope(oSymTable, name, 0);
-
-        	if(s != NULL) return s;
+                if(s != NULL) return s;
 	}
 
 	return NULL;

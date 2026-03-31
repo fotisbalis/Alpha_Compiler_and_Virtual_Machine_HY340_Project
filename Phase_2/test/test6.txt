@@ -1,18 +1,31 @@
-function test(x, y) {
-    // compute sum
-    result = x + y;
+/* Global variables */
+x = 5;
+y = 10;
 
-    /* multi
-       line
-       comment */
+function outer(a) {
 
-    if (result >= 10) {
-        print("value:\n");
+    local z;
+    z = a + x;      /* OK: x is global */
+
+    function inner(b) {
+
+        local w;
+        w = b + z;  /* OK: z is in outer and no intermediate function */
+
+        function deep(c) {
+
+            local k;
+            k = c + w;   /* OK: w is in inner */
+
+            y = k;       /* OK: y is global */
+
+            return k;
+        }
+
+        return deep(w);
     }
 
-    /* nested
-        /* inner */
-       done */
-
-    return result;
+    return inner(z);
 }
+
+outer(3);

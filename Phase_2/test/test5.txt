@@ -1,9 +1,11 @@
-//fewijgwhigg
+function f() {
+    local x;
 
-/* hfuwh /*
+    function g() {
 
-*/ wegjjrrgh */
+        function h() {
+            x = 5;
+        }
 
-// /* fhweguheg
-
-/* hgrehg /* gehh */
+    }
+}

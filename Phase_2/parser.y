@@ -57,14 +57,14 @@ void yyerror(const char *s);
 %%
 
 program:
-       statements { print_reduce("program", "statement"); }
+       statements { print_reduce("program", "statements"); }
 ;
 
 statements:
-	/* empty */ { print_reduce("statement", "empty"); }
-	| stmt statements { print_reduce("statement", "stmt statement"); } 
-	| LINE_COMMENT statements { print_reduce("statement", "LINE_COMMENT statement"); }
-	| BLOCK_COMMENT statements { print_reduce("statement", "BLOCK_COMMENT statement"); }
+	/* empty */ { print_reduce("statements", "empty"); }
+	| stmt statements { print_reduce("statements", "stmt statement"); } 
+	| LINE_COMMENT statements { print_reduce("statements", "LINE_COMMENT statements"); }
+	| BLOCK_COMMENT statements { print_reduce("statements", "BLOCK_COMMENT statements"); }
 
 stmt:
 	expr SEMI_COLON { print_reduce("stmt", "expr SEMI_COLON"); }
@@ -159,9 +159,16 @@ lvalue:
 
 		/* if its inside a function and not from function scope or a global variable, then error */
 		else if(s != NULL && function_depth >= 0){
+			int allowed = 0;
 
-			if(s->scope > 0 && s->scope != function_scopes[function_depth]){ 
-				printf("ERROR: use of variable \"%s\" from outer function scope at line %d\n", s->name, t.line);
+			if(s->scope == function_scopes[function_depth]) allowed = 1;
+
+			else if(s->scope == function_scopes[function_depth - 1] && strcmp(s->type, "local variable") == 0) allowed = 1;
+
+			else if(s->scope == 0) allowed = 1;
+
+			if(allowed == 0) { 
+				printf("ERROR: use of variable \"%s\" from outer function more than one scope away at line %d\n", s->name, t.line);
 			}
 		}
 
