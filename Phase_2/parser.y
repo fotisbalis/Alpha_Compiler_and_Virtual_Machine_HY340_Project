@@ -41,15 +41,18 @@ void yyerror(const char *s);
 %token <realVal> CONST_REAL
 %token <idVal> ID
 
+%right ASSIGN
+
 %left OR
 %left AND
-%left EQUAL NOT_EQUAL
-%left LESS LESS_EQUAL GREATER GREATER_EQUAL
+%nonassoc EQUAL NOT_EQUAL
+%nonassoc LESS LESS_EQUAL GREATER GREATER_EQUAL
 %left PLUS MINUS
 %left MULTIPLY DIVISION MOD
+
 %right NOT
 %right UMINUS
-%right ASSIGN
+
 %left DOT
 %left LEFT_BRACKET RIGHT_BRACKET
 %nonassoc IFX
@@ -69,7 +72,7 @@ statements:
 stmt:
 	expr SEMI_COLON { print_reduce("stmt", "expr SEMI_COLON"); }
 	| ifstmt { print_reduce("stmt", "ifstmt"); }
-	| whilestmt { print_reduce("stmt", "ifstmt"); }
+	| whilestmt { print_reduce("stmt", "whilestmt"); }
 	| forstmt { print_reduce("stmt", "forstmt"); }
 	| returnstmt { print_reduce("stmt", "returnstmt"); }
 	| BREAK SEMI_COLON {
@@ -87,24 +90,20 @@ stmt:
 
 expr:
 	assignexpr { print_reduce("expr", "assignexpr"); }
-	| expr op expr { print_reduce("expr", "expr op expr"); }
+	| expr PLUS expr { print_reduce("expr", "expr PLUS expr"); }
+	| expr MINUS expr { print_reduce("expr", "expr MINUS expr"); }
+        | expr MULTIPLY expr { print_reduce("expr", "expr MULTIPLY expr"); }
+        | expr DIVISION expr { print_reduce("expr", "expr DIVISION expr"); }
+        | expr MOD expr { print_reduce("expr", "expr MOD expr"); }
+        | expr GREATER expr { print_reduce("expr", "expr GREATER expr"); }
+        | expr GREATER_EQUAL expr { print_reduce("expr", "expr GREATER_EQUAL expr"); }
+        | expr LESS expr { print_reduce("expr", "expr LESS expr"); }
+        | expr LESS_EQUAL expr { print_reduce("expr", "expr LESS_EQUAL expr"); }
+        | expr EQUAL expr { print_reduce("expr", "expr EQUAL expr"); }
+        | expr NOT_EQUAL expr { print_reduce("expr", "expr NOT_EQUAL expr"); }
+        | expr AND expr { print_reduce("expr", "expr AND expr"); }
+        | expr OR expr { print_reduce("expr", "expr OR expr"); }
 	| term { print_reduce("expr", "term"); }
-;
-
-op:
-	PLUS { print_reduce("op", "PLUS"); }
-	| MINUS { print_reduce("op", "MINUS"); }
-	| MULTIPLY { print_reduce("op", "MULTIPLY"); }
-	| DIVISION { print_reduce("op", "DIVISION"); }
-	| MOD { print_reduce("op", "MOD"); }
-	| GREATER { print_reduce("op", "GREATER"); }
-	| GREATER_EQUAL { print_reduce("op", "GREATER_EQUAL"); }
-	| LESS { print_reduce("op", "LESS"); }
-	| LESS_EQUAL { print_reduce("op", "LESS_EQUAL"); }
-	| EQUAL { print_reduce("op", "EQUAL"); }
-	| NOT_EQUAL { print_reduce("op", "NOT_EQUAL"); }
-	| AND { print_reduce("op", "AND"); }
-	| OR { print_reduce("op", "OR"); }
 ;
 
 term:
@@ -142,22 +141,41 @@ lvalue:
 	ID { /* add in current scope */
 		current_lvalue = NULL;
 		Symbol *s = SymTable_lookup(sym_table, $1, current_scope, function_depth, function_scopes);
-		Symbol* lib = SymTable_lookup_scope(sym_table, $1, 0);
+		Symbol* lib_check = SymTable_lookup_scope(sym_table, $1, 0);
 
-		if(lib != NULL && strcmp(lib->type, "library function") == 0){
-                        printf("ERROR: use of library function \"%s\" as variable at line %d\n", lib->name, t.line);
+		if(lib_check != NULL && strcmp(lib_check->type, "library function") == 0){
+                        printf("ERROR: use of library function \"%s\" as variable at line %d\n", lib_check->name, t.line);
                 }
 
 		else if(s == NULL){
-			if(current_scope == 0)
+			if(function_depth >= 0){
+				if(function_depth > 0){
+					int outer_scope = function_scopes[function_depth - 1];
+					Symbol* outer_symbol = SymTable_lookup_scope(sym_table, $1, outer_scope);
+				
+					if(outer_symbol != NULL && strcmp(outer_symbol->type, "local variable") == 0)
+						printf("ERROR: use of outer scope variable \"%s\" in nested function at line %d\n", $1, t.line);
+					else {
+						s = Symbol_create($1, "local variable", current_scope, t.line, 1);
+						SymTable_put(sym_table, s);
+					}
+				}
+				else {
+					s = Symbol_create($1, "local variable", current_scope, t.line, 1);
+					SymTable_put(sym_table, s);
+				}
+			}
+			else if(current_scope == 0){
                                 s = Symbol_create($1, "global variable", current_scope, t.line, 1);
-                        else
+				SymTable_put(sym_table, s);
+			}
+                        else {
                                 s = Symbol_create($1, "variable", current_scope, t.line, 1);		
-
-            		SymTable_put(sym_table, s);
+				SymTable_put(sym_table, s);
+			}
 		}
 
-		/* if its inside a function and not from function scope or a global variable, then error */
+		/* if its inside a function and not from function scope or a global variable, then error 
 		else if(s != NULL && function_depth >= 0){
 			int allowed = 0;
 
@@ -170,7 +188,7 @@ lvalue:
 			if(allowed == 0) { 
 				printf("ERROR: use of variable \"%s\" from outer function more than one scope away at line %d\n", s->name, t.line);
 			}
-		}
+		}*/
 
 		/* if it is a function */
 		else if(s != NULL && strcmp(s->type, "function") == 0){
@@ -205,7 +223,7 @@ lvalue:
 			printf("ERROR: undefined global variable %s at line %d\n", $2, t.line);
 		}
 
-		{ print_reduce("lvalue", "DOUBLE_COLONID"); }
+		{ print_reduce("lvalue", "DOUBLE_COLON ID"); }
 	}
 	| member { print_reduce("lvalue", "member"); }
 ;
@@ -213,8 +231,6 @@ lvalue:
 member:
 	lvalue DOT ID { print_reduce("member", "lvalue DOT ID"); }
 	| lvalue LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "lvalue LEFT_BRACKET expr RIGHT_BRACKET"); }
-	| call DOT ID { print_reduce("member", "call DOT ID"); }
-	| call LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "call LEFT_BRACKET expr RIGHT_BRACKET"); }
 ;
 
 call:
@@ -307,22 +323,24 @@ funcdef:
 		else if(s == NULL || s->isActive == 0){
 			Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1);
 			SymTable_put(sym_table, s);
-			
-			current_scope++;
 	
                 	function_depth++;
 			function_scopes[function_depth] = current_scope;
 			function_started = 1;
 		}
+
+		current_scope++;
 	}
 	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
 	LEFT_BRACE statements RIGHT_BRACE {
+		SymTable_hide_scope(sym_table, current_scope);
+
 		if(function_started == 1){
-			SymTable_hide_scope(sym_table, current_scope);
-			current_scope--;
 			function_depth--;
 			function_started = 0;
 		}
+
+		current_scope--;
 
 		print_reduce("funcdef", "FUNCTION ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
 	}

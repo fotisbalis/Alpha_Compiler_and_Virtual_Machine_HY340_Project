@@ -110,7 +110,7 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
     	s->line = sym->line;
     	s->isActive = sym->isActive;
 	
-	/* Add new the new symbol at the start of the bucket */
+	/* Add the new symbol at the start of the bucket */
 	new = (node*)malloc(sizeof(node));
 	new->key = strdup(name_scope);
 	new->value = s;
@@ -137,12 +137,13 @@ Symbol* SymTable_lookup_scope(SymTable_T oSymTable, char *name, int scope){
 }
 
 Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope, int function_depth, int* function_scopes){
-	int i, function_scope, j, outer_function_scope;
+	int i, function_scope;
 	Symbol* s;
 
 	/* not functions */
 	if(function_depth == -1){
 		for(i = current_scope; i >= 0; i--){ 
+
 			s = SymTable_lookup_scope(oSymTable, name, i);
 			
 			if(s != NULL) return s;
@@ -153,25 +154,23 @@ Symbol* SymTable_lookup(SymTable_T oSymTable, char *name, int current_scope, int
 	else if(function_depth >= 0){
 		function_scope = function_scopes[function_depth];
 		
+		/* current function */
 		for(i = current_scope; i >= function_scope; i--){
                         
 			s = SymTable_lookup_scope(oSymTable, name, i);
 			if(s != NULL) return s;
 		}
 
-		/* for nested functions, look for locals on outer function */
-		if(function_depth > 0){
-			outer_function_scope = function_scopes[function_depth - 1];
+		/* outer scope functions */
+		for(i = (function_scope - 1); i > 0; i--){
 
-			if((function_scope - outer_function_scope) <= 1){
-				s = SymTable_lookup_scope(oSymTable, name, outer_function_scope);
+			s = SymTable_lookup_scope(oSymTable, name, i);
 
-				if(s != NULL && strcmp(s->type, "local variable") == 0)
-					return s;
-			}
+                        if(s != NULL && strcmp(s->type, "function") == 0)
+				return s;
 		}
 		
-		/* globals */
+		/* global scope */
 		s = SymTable_lookup_scope(oSymTable, name, 0);
                 if(s != NULL) return s;
 	}

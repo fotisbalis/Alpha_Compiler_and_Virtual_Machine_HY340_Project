@@ -14,7 +14,7 @@ typedef struct Symbol {
 /* creates and returns a symbol */
 Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive);
 
-/* cretaes and returns a symbol table */
+/* creates and returns a symbol table */
 SymTable_T SymTable_create(void);
 
 /* destructor of the sym table */
