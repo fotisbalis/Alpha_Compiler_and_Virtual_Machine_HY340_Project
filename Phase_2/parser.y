@@ -5,6 +5,7 @@
 #include <assert.h>
 #include "token.h"
 #include "symbol_table.h"
+#include "error.h"
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
@@ -76,7 +77,11 @@ stmt:
 	| forstmt { print_reduce("stmt", "forstmt"); }
 	| returnstmt { print_reduce("stmt", "returnstmt"); }
 	| BREAK SEMI_COLON {
-		if(loop_depth == -1) printf("ERROR: break called outside of loop at line %d\n", t.line);	
+		if(loop_depth == -1){
+			char error_message[200];
+			sprintf(error_message, "ERROR: break called outside of loop at line %d\n", t.line);
+			add_new_error(error_message);				
+		}
 		print_reduce("stmt", "returnstmt");
 	}
 	| CONTINUE SEMI_COLON {
@@ -453,9 +458,12 @@ int main(int argc, char **argv) {
 
     	printf("Parsing finished.\n");
 
+	print_errors();
+	
 	SymTable_print(sym_table);
 
 	SymTable_free(sym_table);
+	free_errors();
 	fclose(yyin);
     	
 	return 0;

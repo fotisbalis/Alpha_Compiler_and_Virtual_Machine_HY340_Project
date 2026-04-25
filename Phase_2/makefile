@@ -3,7 +3,7 @@
 all:
 	flex scanner.l
 	bison -d parser.y
-	gcc lex.yy.c parser.tab.c symbol_table.c -o parser
+	gcc lex.yy.c parser.tab.c symbol_table.c error.c -o parser
 
 clean:
 	rm -f parser
