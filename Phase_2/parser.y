@@ -79,13 +79,17 @@ stmt:
 	| BREAK SEMI_COLON {
 		if(loop_depth == -1){
 			char error_message[200];
-			sprintf(error_message, "ERROR: break called outside of loop at line %d\n", t.line);
+			sprintf(error_message, "ERROR: break called outside of loop at line %d", t.line);
 			add_new_error(error_message);				
 		}
 		print_reduce("stmt", "returnstmt");
 	}
 	| CONTINUE SEMI_COLON {
-                if(loop_depth == -1) printf("ERROR: continue called outside of loop at line %d\n", t.line);
+                if(loop_depth == -1){
+                        char error_message[200];
+                        sprintf(error_message, "ERROR: continue called outside of loop at line %d", t.line);
+                        add_new_error(error_message);
+                }
 		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
 	| block { print_reduce("stmt", "block"); }
@@ -126,7 +130,9 @@ assignexpr:
 	lvalue ASSIGN expr { 
 		if(current_lvalue != NULL){
 			if(strcmp(current_lvalue->type, "function") == 0) {
-				printf("ERROR: assign to function \"%s\" at line %d\n", current_lvalue->name, t.line);	
+                        	char error_message[200];
+                        	sprintf(error_message, "ERROR: assign to function \"%s\" at line %d", current_lvalue->name, t.line);
+                        	add_new_error(error_message);	
 			}
 		}
 
@@ -149,7 +155,9 @@ lvalue:
 		Symbol* lib_check = SymTable_lookup_scope(sym_table, $1, 0);
 
 		if(lib_check != NULL && strcmp(lib_check->type, "library function") == 0){
-                        printf("ERROR: use of library function \"%s\" as variable at line %d\n", lib_check->name, t.line);
+			char error_message[200];
+                        sprintf(error_message, "ERROR: use of library function \"%s\" as variable at line %d", lib_check->name, t.line);
+                        add_new_error(error_message);
                 }
 
 		else if(s == NULL){
@@ -158,8 +166,11 @@ lvalue:
 					int outer_scope = function_scopes[function_depth - 1];
 					Symbol* outer_symbol = SymTable_lookup_scope(sym_table, $1, outer_scope);
 				
-					if(outer_symbol != NULL && strcmp(outer_symbol->type, "local variable") == 0)
-						printf("ERROR: use of outer scope variable \"%s\" in nested function at line %d\n", $1, t.line);
+					if(outer_symbol != NULL && strcmp(outer_symbol->type, "local variable") == 0){
+						char error_message[200];
+						sprintf(error_message, "ERROR: use of outer scope variable \"%s\" in nested function at line %d", $1, t.line);
+						add_new_error(error_message);
+					}
 					else {
 						s = Symbol_create($1, "local variable", current_scope, t.line, 1);
 						SymTable_put(sym_table, s);
@@ -207,8 +218,10 @@ lvalue:
 		Symbol* lib = SymTable_lookup_scope(sym_table, $2, 0);
 
                 if(lib != NULL && strcmp(lib->type, "library function") == 0){
-                        printf("ERROR: use of library function \"%s\" as local at line %d\n", lib->name, t.line);
-                }
+			char error_message[200];
+                        sprintf(error_message, "ERROR: use of library function \"%s\" as local at line %d", lib->name, t.line);
+                	add_new_error(error_message);
+		}
 				
 		else if(s == NULL || s->isActive == 0){
                         if(current_scope == 0) 
@@ -225,7 +238,9 @@ lvalue:
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, 0);
 
 		if(s == NULL){
-			printf("ERROR: undefined global variable %s at line %d\n", $2, t.line);
+			char error_message[200];
+			sprintf(error_message, "ERROR: undefined global variable %s at line %d", $2, t.line);
+			add_new_error(error_message);
 		}
 
 		{ print_reduce("lvalue", "DOUBLE_COLON ID"); }
@@ -245,11 +260,15 @@ call:
 		Symbol* s = SymTable_lookup(sym_table, current_lvalue->name, current_scope, function_depth, function_scopes);
 
 		if(s == NULL){
-        		printf("ERROR: undefined function %s at line %d\n", current_lvalue->name, t.line);
+			char error_message[200];
+        		sprintf(error_message, "ERROR: undefined function %s at line %d", current_lvalue->name, t.line);
+			add_new_error(error_message);
 		}
 
 		else if(s != NULL && strcmp(s->type, "function") != 0){
-			printf("ERROR: %s %s incorrectly used as function at line %d\n", s->type, current_lvalue->name, t.line);
+			char error_message[200];
+			sprintf(error_message, "ERROR: %s %s incorrectly used as function at line %d", s->type, current_lvalue->name, t.line);
+			add_new_error(error_message);
 		}
 
 		current_lvalue = NULL;
@@ -318,11 +337,15 @@ funcdef:
                 Symbol* lib = SymTable_lookup_scope(sym_table, $2, 0);
 
                 if(lib != NULL && strcmp(lib->type, "library function") == 0){
-                        printf("ERROR: use of library function \"%s\" as function at line %d\n", lib->name, t.line);
-                }
+			char error_message[200];
+                        sprintf(error_message, "ERROR: use of library function \"%s\" as function at line %d", lib->name, t.line);
+                	add_new_error(error_message);
+		}
 
 		else if(s != NULL && s->isActive == 1) {
-                        printf("ERROR: redeclaration of \"%s\" at line %d\n", $2, t.line);
+			char error_message[200];
+                        sprintf(error_message, "ERROR: redeclaration of \"%s\" at line %d", $2, t.line);
+			add_new_error(error_message);
 		}
 
 		else if(s == NULL || s->isActive == 0){
@@ -413,7 +436,11 @@ forstmt:
 
 returnstmt:
 	RETURN returnvalue SEMI_COLON {
-		if(function_depth == -1) printf("ERROR: return called outside of function at line %d\n", t.line); 
+		if(function_depth == -1){
+			char error_message[200];
+			sprintf(error_message ,"ERROR: return called outside of function at line %d", t.line); 
+			add_new_error(error_message);
+		}
 
 		print_reduce("returnstmt", "RETURN returnvalue SEMI_COLON");
 	}
