@@ -1,17 +1,9 @@
+#ifndef SYMBOL_TABLE_H
+#define SYMBOL_TABLE_H
 
+#include "symbol.h"
 
 typedef struct SymTable *SymTable_T;
-
-typedef struct Symbol {
-	char* name;
-	char* type;
-	int scope;
-	int line;
-	int isActive;	
-} Symbol;
-
-/* creates and returns a symbol */
-Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive);
 
 /* creates and returns a symbol table */
 SymTable_T SymTable_create(void);
@@ -34,3 +26,4 @@ void SymTable_hide_scope(SymTable_T oSymTable, int scope);
 /* prints the entire sym table per scope */
 void SymTable_print(SymTable_T oSymTable);
 
+#endif

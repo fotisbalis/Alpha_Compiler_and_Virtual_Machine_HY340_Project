@@ -7,6 +7,7 @@
 #include "token.h"
 #include "symbol_table.h"
 #include "error.h"
+#include "symbol.h"
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);

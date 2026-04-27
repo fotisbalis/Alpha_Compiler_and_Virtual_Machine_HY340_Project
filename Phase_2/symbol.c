@@ -1,0 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
+#include "symbol.h"
+
+Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive){
+        
+	Symbol* sym = malloc(sizeof(Symbol));
+        
+	sym->name = strdup(name);
+        sym->type = strdup(type);
+
+        assert(scope >= 0 && line >= 0);
+        sym->scope = scope;
+        sym->line = line;
+
+        assert(isActive == 0 || isActive == 1);
+        sym->isActive = isActive;
+
+        return sym;
+}
