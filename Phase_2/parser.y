@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
 #include "token.h"
 #include "symbol_table.h"
 #include "error.h"
@@ -69,6 +70,7 @@ statements:
 	| stmt statements { print_reduce("statements", "stmt statement"); } 
 	| LINE_COMMENT statements { print_reduce("statements", "LINE_COMMENT statements"); }
 	| BLOCK_COMMENT statements { print_reduce("statements", "BLOCK_COMMENT statements"); }
+	| NESTED_COMMENT statements { print_reduce("statements", "NESTED_COMMENT statements"); }
 
 stmt:
 	expr SEMI_COLON { print_reduce("stmt", "expr SEMI_COLON"); }
@@ -82,7 +84,7 @@ stmt:
 			sprintf(error_message, "ERROR: break called outside of loop at line %d", t.line);
 			add_new_error(error_message);				
 		}
-		print_reduce("stmt", "returnstmt");
+		print_reduce("stmt", "BREAK SEMI_COLON");
 	}
 	| CONTINUE SEMI_COLON {
                 if(loop_depth == -1){
@@ -152,15 +154,8 @@ lvalue:
 	ID { /* add in current scope */
 		current_lvalue = NULL;
 		Symbol *s = SymTable_lookup(sym_table, $1, current_scope, function_depth, function_scopes);
-		Symbol* lib_check = SymTable_lookup_scope(sym_table, $1, 0);
 
-		if(lib_check != NULL && strcmp(lib_check->type, "library function") == 0){
-			char error_message[200];
-                        sprintf(error_message, "ERROR: use of library function \"%s\" as variable at line %d", lib_check->name, t.line);
-                        add_new_error(error_message);
-                }
-
-		else if(s == NULL){
+		if(s == NULL){
 			if(function_depth >= 0){
 				if(function_depth > 0){
 					int outer_scope = function_scopes[function_depth - 1];
@@ -190,21 +185,6 @@ lvalue:
 				SymTable_put(sym_table, s);
 			}
 		}
-
-		/* if its inside a function and not from function scope or a global variable, then error 
-		else if(s != NULL && function_depth >= 0){
-			int allowed = 0;
-
-			if(s->scope == function_scopes[function_depth]) allowed = 1;
-
-			else if(s->scope == function_scopes[function_depth - 1] && strcmp(s->type, "local variable") == 0) allowed = 1;
-
-			else if(s->scope == 0) allowed = 1;
-
-			if(allowed == 0) { 
-				printf("ERROR: use of variable \"%s\" from outer function more than one scope away at line %d\n", s->name, t.line);
-			}
-		}*/
 
 		/* if it is a function */
 		else if(s != NULL && strcmp(s->type, "function") == 0){
@@ -251,6 +231,8 @@ lvalue:
 member:
 	lvalue DOT ID { print_reduce("member", "lvalue DOT ID"); }
 	| lvalue LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "lvalue LEFT_BRACKET expr RIGHT_BRACKET"); }
+	| call DOT ID { print_reduce("member", "call DOT ID"); }
+        | call LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "call LEFT_BRACKET expr RIGHT_BRACKET"); }
 ;
 
 call:
@@ -291,7 +273,7 @@ normcall:
 ;
 
 methodcall:
-	  DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("methodcall", "DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
+	  DOUBLE_DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("methodcall", "DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
 ;
 
 elist:
@@ -414,7 +396,20 @@ const:
 
 idlist:
 	ID { 	
-		if(SymTable_lookup_scope(sym_table, $1, current_scope) == NULL){
+		Symbol* s = SymTable_lookup_scope(sym_table, $1, current_scope);
+                Symbol* lib = SymTable_lookup_scope(sym_table, $1, 0);
+
+		if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                        char error_message[200];
+                        sprintf(error_message, "ERROR: formal argument \"%s\" shadows library function at line %d", $1, t.line);
+                        add_new_error(error_message);
+                }
+		else if(s != NULL && s->isActive == 1){
+                        char error_message[200];
+                        sprintf(error_message, "ERROR: duplicate formal argument \"%s\" at line %d", $1, t.line);
+                        add_new_error(error_message);
+                }
+		else {
 			Symbol* s = Symbol_create($1, "parameter", current_scope, t.line, 1);
            		SymTable_put(sym_table, s); 
 		}
@@ -422,7 +417,20 @@ idlist:
 		print_reduce("idlist", "ID");
 	}
 	| idlist COMMA ID {
-		if(SymTable_lookup_scope(sym_table, $3, current_scope) == NULL){
+		Symbol* s = SymTable_lookup_scope(sym_table, $3, current_scope);
+                Symbol* lib = SymTable_lookup_scope(sym_table, $3, 0);
+
+                if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                        char error_message[200];
+                        sprintf(error_message, "ERROR: formal argument \"%s\" shadows library function at line %d", $3, t.line);
+                        add_new_error(error_message);
+                }
+                else if(s != NULL && s->isActive == 1){
+                        char error_message[200];
+                        sprintf(error_message, "ERROR: duplicate formal argument \"%s\" at line %d", $3, t.line);
+                        add_new_error(error_message);
+                }
+		else {
 			Symbol* s = Symbol_create($3, "parameter", current_scope, t.line, 1);
                 	SymTable_put(sym_table, s);
 		}

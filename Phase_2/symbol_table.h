@@ -1,5 +1,4 @@
-#include <stddef.h>
-#include <assert.h>
+
 
 typedef struct SymTable *SymTable_T;
 
