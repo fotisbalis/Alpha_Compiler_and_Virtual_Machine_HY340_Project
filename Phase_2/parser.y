@@ -12,7 +12,7 @@ extern int alpha_yylex(Token *token);
 Token t;
 
 SymTable_T sym_table;
-int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100], function_started = 0;
+int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100], function_started = 0, anonymous_function_counter = 0;
 Symbol* current_lvalue = NULL; 
 
 void print_reduce(char *a, char* b){
@@ -372,6 +372,35 @@ funcdef:
 
 		print_reduce("funcdef", "FUNCTION ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
 	}
+	| FUNCTION {
+                char anonymous_name[32];
+                sprintf(anonymous_name, "anonymous_func_%d", anonymous_function_counter++);
+
+                Symbol* s = SymTable_lookup_scope(sym_table, anonymous_name, current_scope);
+
+                if(s == NULL || s->isActive == 0){
+                        Symbol* s = Symbol_create(anonymous_name, "function", current_scope, t.line, 1);
+                        SymTable_put(sym_table, s);
+
+                        function_depth++;
+                        function_scopes[function_depth] = current_scope;
+                        function_started = 1;
+                }
+
+                current_scope++;
+        } LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS
+        LEFT_BRACE statements RIGHT_BRACE {
+                SymTable_hide_scope(sym_table, current_scope);
+
+                if(function_started == 1){
+                        function_depth--;
+                        function_started = 0;
+                }
+
+                current_scope--;
+
+                print_reduce("funcdef", "FUNCTION LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
+        }
 ;
 
 const:

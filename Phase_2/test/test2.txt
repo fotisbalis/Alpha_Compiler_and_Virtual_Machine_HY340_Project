@@ -1,2 +1,7 @@
 x = 5;
-return x;
+
+function (){}
+
+function (a, b) {
+	x = 5;
+}
