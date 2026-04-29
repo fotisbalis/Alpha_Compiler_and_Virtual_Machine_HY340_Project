@@ -1,0 +1,33 @@
+// Single line comment
+/* Block comment with
+   multiple lines */
+function add(a, b) {
+    return a + b;
+}
+
+add = 5;
+
+cos;
+local c;
+local cos;
+
+x = 10;
+y = 20.5;
+z = x + y * 2;
+
+if (x > 0) {
+    local y;
+    y = y - 1;
+} else {
+    y = y + 1;
+}
+
+while (x < 100) {
+    x++;
+}
+
+for (i, j; i < 10; j++) {
+    break;
+}
+
+local c;

@@ -1,0 +1,52 @@
+x = 10;
+y = 20;
+
+function add(a, b) {
+    result = a + b;
+    return result;
+}
+
+z = add(x, y);
+
+z = x();        
+
+k = foo(1,2);
+
+{
+    local x;
+    x = 5;
+
+    {
+        local x;
+        x = 7;
+    }
+
+    y = x;
+}
+
+::x = 50;
+
+if (x > 0) {
+    y = y + 1;
+} else {
+    y = y - 1;
+}
+
+while (x < 100) {
+    x++;
+}
+
+for (i; i < 10; i++) {
+    break;
+}
+
+break;
+
+continue;
+
+return 5;
+
+{
+    local a;
+    local a;
+}

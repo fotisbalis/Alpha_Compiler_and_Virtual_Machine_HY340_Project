@@ -1,0 +1,11 @@
+function f() {
+    local x;
+
+    function g() {
+
+        function h() {
+            x = 5;
+        }
+
+    }
+}

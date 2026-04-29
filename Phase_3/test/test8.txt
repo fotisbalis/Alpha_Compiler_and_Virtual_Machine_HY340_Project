@@ -1,0 +1,6 @@
+function f(){
+    x = 10;
+    function g(){
+        x = 5;   // ERROR
+    }
+}

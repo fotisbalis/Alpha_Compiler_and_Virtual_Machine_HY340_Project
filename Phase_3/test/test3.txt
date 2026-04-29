@@ -1,0 +1,72 @@
+// ===== COMMENTS =====
+/* block comment */
+
+// ===== GLOBAL VARIABLES =====
+x = 10;
+y = 20;
+
+// ===== FUNCTION =====
+function add(a, b) {
+    result = a + b;
+    return result;
+}
+
+// ===== FUNCTION CALL (valid) =====
+z = add(x, y);
+
+// ===== FUNCTION CALL ERROR =====
+z = x();        // ERROR: x is not function
+
+// ===== UNDEFINED FUNCTION =====
+k = foo(1,2);   // ERROR: undefined function
+
+// ===== LOCAL VARIABLES =====
+{
+    local x;
+    x = 5;
+
+    {
+        local x;
+        x = 7;
+    }
+
+    y = x;  // uses inner x
+}
+
+// ===== GLOBAL ACCESS =====
+::x = 50;
+
+// ===== UNDEFINED GLOBAL =====
+::unknown;   // ERROR
+
+// ===== IF =====
+if (x > 0) {
+    y = y + 1;
+} else {
+    y = y - 1;
+}
+
+// ===== WHILE =====
+while (x < 100) {
+    x++;
+}
+
+// ===== FOR =====
+for (i; i < 10; i++) {
+    break;
+}
+
+// ===== BREAK ERROR =====
+break;   // ERROR
+
+// ===== CONTINUE ERROR =====
+continue;   // ERROR
+
+// ===== RETURN ERROR =====
+return 5;   // ERROR
+
+// ===== REDECLARATION =====
+{
+    local a;
+    local a;   // ERROR
+}
