@@ -7,7 +7,6 @@ typedef struct Token {
         char *content;
         char *type;
         char *name;
-	struct Token* next;
 } Token;
 
 #endif

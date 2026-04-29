@@ -9,6 +9,7 @@
 #include "error.h"
 #include "symbol.h"
 #include "utils.h"
+#include "pending_stmt_quads.h"
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
@@ -524,7 +525,7 @@ int main(int argc, char **argv) {
 
     	printf("Parsing finished.\n");
 	
-	if(has_errors() == 1)
+	if(has_errors())
 		print_errors();
 	
 	SymTable_print(sym_table);

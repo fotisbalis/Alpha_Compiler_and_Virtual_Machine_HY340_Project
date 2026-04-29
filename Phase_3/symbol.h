@@ -7,6 +7,7 @@ typedef struct Symbol {
         int scope;
         int line;
         int isActive;
+	int isTemp;
 } Symbol;
 
 Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive);

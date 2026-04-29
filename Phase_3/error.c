@@ -30,10 +30,9 @@ void add_new_error(char* error_message){
 
 int has_errors(){
 
-	if(head == NULL)
-		return 0;
+	if(count > 0) return 1;
 
-	return 1;
+	return 0;
 }
 
 int error_count(){

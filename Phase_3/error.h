@@ -1,3 +1,6 @@
+#ifndef ERROR_H
+#define ERROR_H
+
 typedef struct Error {
 	char* message;
 	struct Error *next;
@@ -5,10 +8,12 @@ typedef struct Error {
 
 void add_new_error(char* error_message);
 
-int has_errors();
+int has_errors(); /* bool */
 
 int error_count();
 
 void print_errors();
 
 void free_errors();
+
+#endif
