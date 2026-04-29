@@ -1,6 +1,9 @@
 # Compiled files
 lex.yy.c
 scanner
+parser.tab.c
+parser.tab.h
+parser
 *.o
 
 # Editor
