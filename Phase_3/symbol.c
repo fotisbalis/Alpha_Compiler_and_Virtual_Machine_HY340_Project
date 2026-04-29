@@ -5,7 +5,7 @@
 
 #include "symbol.h"
 
-Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive){
+Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive, int isTemp){
         
 	Symbol* sym = malloc(sizeof(Symbol));
         
@@ -18,6 +18,9 @@ Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive)
 
         assert(isActive == 0 || isActive == 1);
         sym->isActive = isActive;
+
+	assert(isTemp == 0 || isTemp == 1);
+        sym->isTemp = isTemp;
 
         return sym;
 }

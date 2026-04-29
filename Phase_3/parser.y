@@ -10,6 +10,7 @@
 #include "symbol.h"
 #include "utils.h"
 #include "pending_stmt_quads.h"
+#include "expr.h"
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
@@ -31,6 +32,11 @@ void yyerror(const char *s);
 	char* idVal;
 	int intVal;
 	double realVal;
+	Expr* exprNode;
+	ExprList* exprList;
+	Stmt* stmtNode;
+	PendingQuads* pendingQuads;
+	int quadNum;
 }
 
 %token LINE_COMMENT NESTED_COMMENT BLOCK_COMMENT
@@ -166,21 +172,21 @@ lvalue:
 						add_new_error(error_message);
 					}
 					else {
-						s = Symbol_create($1, "local variable", current_scope, t.line, 1);
+						s = Symbol_create($1, "local variable", current_scope, t.line, 1, 0);
 						SymTable_put(sym_table, s);
 					}
 				}
 				else {
-					s = Symbol_create($1, "local variable", current_scope, t.line, 1);
+					s = Symbol_create($1, "local variable", current_scope, t.line, 1, 0);
 					SymTable_put(sym_table, s);
 				}
 			}
 			else if(current_scope == 0){
-                                s = Symbol_create($1, "global variable", current_scope, t.line, 1);
+                                s = Symbol_create($1, "global variable", current_scope, t.line, 1, 0);
 				SymTable_put(sym_table, s);
 			}
                         else {
-                                s = Symbol_create($1, "variable", current_scope, t.line, 1);		
+                                s = Symbol_create($1, "variable", current_scope, t.line, 1, 0);		
 				SymTable_put(sym_table, s);
 			}
 		}
@@ -205,9 +211,9 @@ lvalue:
 				
 		else if(s == NULL || s->isActive == 0){
                         if(current_scope == 0) 
-				s = Symbol_create($2, "global variable", current_scope, t.line, 1);
+				s = Symbol_create($2, "global variable", current_scope, t.line, 1, 0);
 			else 
-				s = Symbol_create($2, "local variable", current_scope, t.line, 1);
+				s = Symbol_create($2, "local variable", current_scope, t.line, 1, 0);
                         
 			SymTable_put(sym_table, s);
                 }
@@ -332,7 +338,7 @@ funcdef:
 		}
 
 		else if(s == NULL || s->isActive == 0){
-			Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1);
+			Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1, 0);
 			SymTable_put(sym_table, s);
 	
                 	function_depth++;
@@ -362,7 +368,7 @@ funcdef:
                 Symbol* s = SymTable_lookup_scope(sym_table, anonymous_name, current_scope);
 
                 if(s == NULL || s->isActive == 0){
-                        Symbol* s = Symbol_create(anonymous_name, "function", current_scope, t.line, 1);
+                        Symbol* s = Symbol_create(anonymous_name, "function", current_scope, t.line, 1, 0);
                         SymTable_put(sym_table, s);
 
                         function_depth++;
@@ -412,7 +418,7 @@ idlist:
                         add_new_error(error_message);
                 }
 		else {
-			Symbol* s = Symbol_create($1, "parameter", current_scope, t.line, 1);
+			Symbol* s = Symbol_create($1, "parameter", current_scope, t.line, 1, 0);
            		SymTable_put(sym_table, s); 
 		}
 
@@ -434,7 +440,7 @@ idlist:
                         add_new_error(error_message);
                 }
 		else {
-			Symbol* s = Symbol_create($3, "parameter", current_scope, t.line, 1);
+			Symbol* s = Symbol_create($3, "parameter", current_scope, t.line, 1, 0);
                 	SymTable_put(sym_table, s);
 		}
 
@@ -505,18 +511,18 @@ int main(int argc, char **argv) {
 	sym_table = SymTable_create();
 
 	/* library functions */
-	SymTable_put(sym_table, Symbol_create("print", "library function", 0, 0, 1));
-	SymTable_put(sym_table, Symbol_create("input", "library function", 0, 0, 1));
-	SymTable_put(sym_table, Symbol_create("objectmemberkeys", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("objecttotalmembers", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("objectcopy", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("totalarguments", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("argument", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("typeof", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("strtonum", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("sqrt", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("cos", "library function", 0, 0, 1));
-        SymTable_put(sym_table, Symbol_create("sin", "library function", 0, 0, 1));
+	SymTable_put(sym_table, Symbol_create("print", "library function", 0, 0, 1, 0));
+	SymTable_put(sym_table, Symbol_create("input", "library function", 0, 0, 1, 0));
+	SymTable_put(sym_table, Symbol_create("objectmemberkeys", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("objecttotalmembers", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("objectcopy", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("totalarguments", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("argument", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("typeof", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("strtonum", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("sqrt", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("cos", "library function", 0, 0, 1, 0));
+        SymTable_put(sym_table, Symbol_create("sin", "library function", 0, 0, 1, 0));
 
 	if(yyparse() != 0) {
         	SymTable_free(sym_table);

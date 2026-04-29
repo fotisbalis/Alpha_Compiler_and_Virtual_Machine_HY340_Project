@@ -96,6 +96,7 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
     	s->scope = sym->scope;
     	s->line = sym->line;
     	s->isActive = sym->isActive;
+	s->isTemp = sym->isTemp;
 	
 	/* Add the new symbol at the start of the bucket */
 	new = (node*)malloc(sizeof(node));

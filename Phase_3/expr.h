@@ -12,7 +12,7 @@ typedef struct Expr {
 	int bool_const;
 	PendingQuads *TrueList;
 	PendingQuads *FalseList;
-	Expr *next;	
+	struct Expr *next;	
 } Expr;
 
 typedef struct ExprList {

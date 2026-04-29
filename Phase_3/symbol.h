@@ -10,6 +10,6 @@ typedef struct Symbol {
 	int isTemp;
 } Symbol;
 
-Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive);
+Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive, int isTemp);
 
 #endif

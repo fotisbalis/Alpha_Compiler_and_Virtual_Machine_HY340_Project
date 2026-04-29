@@ -8,10 +8,10 @@ typedef struct PendingQuads {
 } PendingQuads;
 
 /* Stores pending quads of a statement */
-typedef struct Stmt_PendingQuads {
+typedef struct Stmt {
         PendingQuads *JumpQuads; /* jump to next part of the statement */
         PendingQuads *BreakQuads;
         PendingQuads *ContinueQuads;
-} Stmt_PendingQuads;
+} Stmt;
 
 #endif
