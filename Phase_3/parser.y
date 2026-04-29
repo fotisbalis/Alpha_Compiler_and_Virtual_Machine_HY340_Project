@@ -523,8 +523,9 @@ int main(int argc, char **argv) {
     	}	
 
     	printf("Parsing finished.\n");
-
-	print_errors();
+	
+	if(has_errors() == 1)
+		print_errors();
 	
 	SymTable_print(sym_table);
 

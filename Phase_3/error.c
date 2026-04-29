@@ -7,6 +7,8 @@
 Error* head = NULL;
 Error* tail = NULL;
 
+int count = 0;
+
 void add_new_error(char* error_message){
 	
 	Error* err = malloc(sizeof(Error));
@@ -22,13 +24,26 @@ void add_new_error(char* error_message){
 		tail->next = err;
 		tail = err;
 	}
+
+	count++;
+}
+
+int has_errors(){
+
+	if(head == NULL)
+		return 0;
+
+	return 1;
+}
+
+int error_count(){
+
+        return count;
 }
 
 void print_errors(){
 
 	Error* err;
-
-	if(head == NULL) return;
 
 	printf("\n--------- Errors ---------\n");
 
