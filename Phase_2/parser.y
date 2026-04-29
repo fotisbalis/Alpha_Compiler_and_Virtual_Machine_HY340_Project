@@ -8,6 +8,7 @@
 #include "symbol_table.h"
 #include "error.h"
 #include "symbol.h"
+#include "utils.h"
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
@@ -16,10 +17,6 @@ Token t;
 SymTable_T sym_table;
 int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100], function_started = 0, anonymous_function_counter = 0;
 Symbol* current_lvalue = NULL; 
-
-void print_reduce(char *a, char* b){
-	printf("%s -> %s\n", a, b);
-}
 
 int yylex(void) {
 	return alpha_yylex(&t);
@@ -196,9 +193,10 @@ lvalue:
 	}
 	| LOCAL ID { /* if the symbol doesn't exist or is hidden in current scope and not library function name, then it's added */
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
-		Symbol* lib = SymTable_lookup_scope(sym_table, $2, 0);
+		
+		Symbol* lib = check_for_lib_func(sym_table, $2);
 
-                if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                if(lib != NULL){
 			char error_message[200];
                         sprintf(error_message, "ERROR: use of library function \"%s\" as local at line %d", lib->name, t.line);
                 	add_new_error(error_message);
@@ -317,9 +315,10 @@ block:
 funcdef:
        FUNCTION ID {
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
-                Symbol* lib = SymTable_lookup_scope(sym_table, $2, 0);
+                
+		Symbol* lib = check_for_lib_func(sym_table, $2);
 
-                if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                if(lib != NULL){
 			char error_message[200];
                         sprintf(error_message, "ERROR: use of library function \"%s\" as function at line %d", lib->name, t.line);
                 	add_new_error(error_message);
@@ -398,9 +397,10 @@ const:
 idlist:
 	ID { 	
 		Symbol* s = SymTable_lookup_scope(sym_table, $1, current_scope);
-                Symbol* lib = SymTable_lookup_scope(sym_table, $1, 0);
+          
+		Symbol* lib = check_for_lib_func(sym_table, $1);
 
-		if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                if(lib != NULL){
                         char error_message[200];
                         sprintf(error_message, "ERROR: formal argument \"%s\" shadows library function at line %d", $1, t.line);
                         add_new_error(error_message);
@@ -419,9 +419,10 @@ idlist:
 	}
 	| idlist COMMA ID {
 		Symbol* s = SymTable_lookup_scope(sym_table, $3, current_scope);
-                Symbol* lib = SymTable_lookup_scope(sym_table, $3, 0);
+                
+		Symbol* lib = check_for_lib_func(sym_table, $3);
 
-                if(lib != NULL && strcmp(lib->type, "library function") == 0){
+                if(lib != NULL){
                         char error_message[200];
                         sprintf(error_message, "ERROR: formal argument \"%s\" shadows library function at line %d", $3, t.line);
                         add_new_error(error_message);
