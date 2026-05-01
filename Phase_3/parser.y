@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "pending_labels.h"
 #include "expr.h"
+#include "quad.h"
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
@@ -36,7 +37,7 @@ void yyerror(const char *s);
 	ExprList* exprList;
 	Stmt* stmtNode;
 	PendingLabel* pendingLabels;
-	int quadNum;
+	int quadID;
 }
 
 %token LINE_COMMENT NESTED_COMMENT BLOCK_COMMENT

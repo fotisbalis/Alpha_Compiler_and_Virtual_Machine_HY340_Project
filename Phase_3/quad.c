@@ -36,13 +36,13 @@ void add_new_quad(Quad quad){
 
 void expand_quads(){
 	
-	Quad *new_quads;
+	Quad *tmpQquads;
 	
 	capacity += 100;
 
-	new_quads = realloc(quads, capacity * sizeof(Quad));
+	tmpQuads = realloc(Quads, capacity * sizeof(Quad));
 
-	quads = new_quads;
+	Quads = tmpQuads;
 }
 
 Quad* get_quads(){
@@ -107,19 +107,16 @@ void print_quads(FILE *f){
 
 	for(i = 0; i < count; i++){
 		
-		fprintf(f, "\n%d:     %s ", quads[i].id, opcode_to_string(quads[i].op));
-
-		print_expr(f, quads[i].res);
-        	fprintf(f, "    ");
-
-        	print_expr(f, quads[i].arg1);
-        	fprintf(f, "    ");
-
-        	print_expr(f, quads[i].arg2);
-        	fprintf(f, "    ");
+		fprintf(f, "%d:  %s %s %s %s",
+			quads[i].id,
+			opcode_to_string(Quads[i].op),
+			expr_to_string(Quads[i].res),
+			expr_to_string(Quads[i].arg1),
+			expr_to_string(Quads[i].arg2)
+		);
 
         	if(quads[i].label != NO_LABEL)
-			fprintf(f, "%d", quads[i].label);
+			fprintf(f, "%d", Quads[i].label);
 
 		fprintf(f, "\n");
 	}
@@ -129,10 +126,10 @@ void print_quads(FILE *f){
 
 void free_quads(){
 
-	free(quads);
-	quads = NULL;
+	free(Quads);
+	Quads = NULL;
 	count = 0;
-	capacity = 64;
+	capacity = 0;
 }
 
 
