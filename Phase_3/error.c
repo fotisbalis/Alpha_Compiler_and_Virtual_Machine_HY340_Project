@@ -4,10 +4,10 @@
 
 #include "error.h"
 
-Error* head = NULL;
-Error* tail = NULL;
+static Error* head = NULL;
+static Error* tail = NULL;
 
-int count = 0;
+static int count = 0;
 
 void add_new_error(char* error_message){
 	

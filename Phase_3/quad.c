@@ -7,9 +7,9 @@
 
 #define NO_LABEL -1
 
-int count = 0;
-int capacity = 64;
-Quad *Quads = malloc(capacity * sizeof(Quad));
+static int count = 0;
+static int capacity = 0;
+static Quad *Quads = NULL;
 
 Quad* create_quad(opcode op, Expr *arg1, Expr *arg2, Expr *res, int label){
 	
@@ -38,7 +38,7 @@ void expand_quads(){
 	
 	Quad *new_quads;
 	
-	capacity *= 2;
+	capacity += 100;
 
 	new_quads = realloc(quads, capacity * sizeof(Quad));
 
