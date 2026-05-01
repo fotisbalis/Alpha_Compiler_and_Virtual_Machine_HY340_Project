@@ -9,7 +9,7 @@
 #include "error.h"
 #include "symbol.h"
 #include "utils.h"
-#include "pending_stmt_quads.h"
+#include "pending_labels.h"
 #include "expr.h"
 
 extern FILE *yyin;
@@ -35,7 +35,7 @@ void yyerror(const char *s);
 	Expr* exprNode;
 	ExprList* exprList;
 	Stmt* stmtNode;
-	PendingQuads* pendingQuads;
+	PendingLabel* pendingLabels;
 	int quadNum;
 }
 

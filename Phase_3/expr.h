@@ -2,7 +2,7 @@
 #define EXPR_H
 
 #include "symbol.h"
-#include "pending_stmt_quads.h"
+#include "pending_labels.h"
 
 typedef struct Expr {
 	Symbol *sym;
@@ -10,8 +10,8 @@ typedef struct Expr {
 	double num_const;
 	char *str_const;
 	int bool_const;
-	PendingQuads *TrueList;
-	PendingQuads *FalseList;
+	PendingLabel *TrueList;
+	PendingLabel *FalseList;
 	struct Expr *next;	
 } Expr;
 
