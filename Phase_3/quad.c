@@ -36,7 +36,7 @@ void add_new_quad(Quad quad){
 
 void expand_quads(){
 	
-	Quad *tmpQquads;
+	Quad *tmpQuads;
 	
 	capacity += 100;
 
@@ -108,14 +108,14 @@ void print_quads(FILE *f){
 	for(i = 0; i < count; i++){
 		
 		fprintf(f, "%d:  %s %s %s %s",
-			quads[i].id,
+			Quads[i].id,
 			opcode_to_string(Quads[i].op),
 			expr_to_string(Quads[i].res),
 			expr_to_string(Quads[i].arg1),
 			expr_to_string(Quads[i].arg2)
 		);
 
-        	if(quads[i].label != NO_LABEL)
+        	if(Quads[i].label != NO_LABEL)
 			fprintf(f, "%d", Quads[i].label);
 
 		fprintf(f, "\n");

@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "token.h"
+#include "pending_labels.h"
+#include "expr.h"
 #include "parser.tab.h"
 
 #define YY_DECL int alpha_yylex(Token *token)

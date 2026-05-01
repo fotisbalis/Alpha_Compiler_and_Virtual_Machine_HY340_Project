@@ -7,8 +7,6 @@
 
 Expr* create_expr(expr_type type){
 
-	assert(type != NULL);
-
 	Expr *expr = malloc(sizeof(Expr));
 
 	expr->sym = NULL;
@@ -103,7 +101,7 @@ char* expr_to_string(Expr *expr){
 	switch(expr->type){
 		
 		case var:
-			return stardup("var");
+			return strdup("var");
 
 		case tableitem:
 			return strdup("tableitem");
@@ -127,7 +125,7 @@ char* expr_to_string(Expr *expr){
 			return strdup("newtable");
         
 		case constnum:
-			sprintf(tmp, "%.3f", e->num_const);
+			sprintf(tmp, "%.3f", expr->num_const);
             		return strdup(tmp);
 
         	case constbool:
