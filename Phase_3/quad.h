@@ -36,23 +36,23 @@ typedef enum opcode {
 typedef struct Quad{
 	int id;
 	opcode op;
+	Expr *res;
 	Expr *arg1;
 	Expr *arg2;
-	Expr *res;
 	int label;
 } Quad;
 
-Quad* create_quad(opcode op, Expr *arg1, Expr *arg2, Expr *res, int label);
+Quad* create_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label);
 
 void add_new_quad(Quad quad);
 
-void new_quad(opcode op, Expr *arg1, Expr *arg2, Expr *res, int label);
+void new_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label);
 
 void expand_quads();
 
 Quad* get_quads();
 
-int quad_count();
+int get_quad_count();
 
 void add_pending_label(int quadID, int label);
 

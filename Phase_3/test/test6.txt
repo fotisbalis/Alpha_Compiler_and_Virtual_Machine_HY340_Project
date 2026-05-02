@@ -1,31 +1,6 @@
-/* Global variables */
-x = 5;
-y = 10;
-
-function outer(a) {
-
-    local z;
-    z = a + x;      /* OK: x is global */
-
-    function inner(b) {
-
-        local w;
-        w = b + z;  /* OK: z is in outer and no intermediate function */
-
-        function deep(c) {
-
-            local k;
-            k = c + w;   /* OK: w is in inner */
-
-            y = k;       /* OK: y is global */
-
-            return k;
-        }
-
-        return deep(w);
-    }
-
-    return inner(z);
-}
-
-outer(3);
+a = 1;
+b = 2;
+x = a > b;
+y = a < b;
+i = a or b;
+z = a == b;

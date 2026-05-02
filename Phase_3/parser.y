@@ -146,14 +146,50 @@ expr:
                 new_quad(_mod, $$, $1, $3, NO_LABEL);
                 print_reduce("expr", "expr MOD expr"); 
 	}
-        | expr GREATER expr { print_reduce("expr", "expr GREATER expr"); }
-        | expr GREATER_EQUAL expr { print_reduce("expr", "expr GREATER_EQUAL expr"); }
-        | expr LESS expr { print_reduce("expr", "expr LESS expr"); }
-        | expr LESS_EQUAL expr { print_reduce("expr", "expr LESS_EQUAL expr"); }
-        | expr EQUAL expr { print_reduce("expr", "expr EQUAL expr"); }
-        | expr NOT_EQUAL expr { print_reduce("expr", "expr NOT_EQUAL expr"); }
-        | expr AND expr { print_reduce("expr", "expr AND expr"); }
-        | expr OR expr { print_reduce("expr", "expr OR expr"); }
+        | expr GREATER expr {
+		$$ = handle_comparison_quad(if_greater, $1, $3, sym_table, current_scope, t.line);				
+
+		print_reduce("expr", "expr GREATER expr");
+	}
+        | expr GREATER_EQUAL expr { 
+		$$ = handle_comparison_quad(if_greatereq, $1, $3, sym_table, current_scope, t.line);
+
+		print_reduce("expr", "expr GREATER_EQUAL expr"); 
+	}
+        | expr LESS expr {
+                $$ = handle_comparison_quad(if_less, $1, $3, sym_table, current_scope, t.line);
+
+                print_reduce("expr", "expr LESS expr"); 
+	}
+        | expr LESS_EQUAL expr {
+                $$ = handle_comparison_quad(if_lesseq, $1, $3, sym_table, current_scope, t.line);
+
+                print_reduce("expr", "expr LESS_EQUAL expr"); 
+	}
+        | expr EQUAL expr {
+                $$ = handle_comparison_quad(if_eq, $1, $3, sym_table, current_scope, t.line);
+
+                print_reduce("expr", "expr EQUAL expr");
+	}
+        | expr NOT_EQUAL expr {
+                $$ = handle_comparison_quad(if_noteq, $1, $3, sym_table, current_scope, t.line);
+
+                print_reduce("expr", "expr NOT_EQUAL expr"); 
+	}
+        | expr AND expr {
+		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+                $$ = lvalue_expr(tmp, boolexpr);
+                new_quad(_and, $$, $1, $3, NO_LABEL);	
+	
+		print_reduce("expr", "expr AND expr");
+	}
+        | expr OR expr {
+                Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+                $$ = lvalue_expr(tmp, boolexpr);
+                new_quad(_or, $$, $1, $3, NO_LABEL);
+
+                print_reduce("expr", "expr OR expr"); 
+	}
 	| term { 
 		$$ = $1;
 		print_reduce("expr", "term");
