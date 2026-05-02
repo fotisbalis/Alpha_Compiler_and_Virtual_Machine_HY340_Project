@@ -93,7 +93,7 @@ char* expr_to_string(Expr *expr){
 	char tmp[64];
 
 	if(expr == NULL)
-		return NULL;
+		return "";
 
 	if(expr->sym != NULL)
         	return strdup(expr->sym->name);
@@ -125,7 +125,7 @@ char* expr_to_string(Expr *expr){
 			return strdup("newtable");
         
 		case constnum:
-			sprintf(tmp, "%.3f", expr->num_const);
+			sprintf(tmp, "%g", expr->num_const);
             		return strdup(tmp);
 
         	case constbool:
@@ -141,6 +141,6 @@ char* expr_to_string(Expr *expr){
 			return strdup("nil");
 
 		default:
-			return NULL;	
+			return "";	
 	}
 }

@@ -537,10 +537,15 @@ int main(int argc, char **argv) {
 	
 	SymTable_print(sym_table);
 
+	printf("\n");
+	print_quads(stdout);
+
 	SymTable_free(sym_table);
 	free_errors();
+	free_quads();
+
 	fclose(yyin);
-    	
+
 	return 0;
 }
 

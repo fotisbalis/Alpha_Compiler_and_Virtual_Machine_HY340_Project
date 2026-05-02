@@ -102,12 +102,12 @@ void print_quads(FILE *f){
 
 	assert(f != NULL);
 
-	fprintf(f, "quad#  opcode  result  arg1   arg2   label\n");
-	fprintf(f, "-----------------------------------------------\n");
+	fprintf(f, "%-8s %-12s %-10s %-10s %-10s %s", "quad#", "opcode", "result", "arg1", "arg2", "label");
+	fprintf(f, "\n------------------------------------------------------------\n");
 
 	for(i = 0; i < count; i++){
 		
-		fprintf(f, "%d:  %s %s %s %s",
+		fprintf(f, "%-8d %-12s %-10s %-10s %s",
 			Quads[i].id,
 			opcode_to_string(Quads[i].op),
 			expr_to_string(Quads[i].res),
@@ -121,7 +121,7 @@ void print_quads(FILE *f){
 		fprintf(f, "\n");
 	}
 
-	fprintf(f, "\n-----------------------------------------------\n");
+	fprintf(f, "------------------------------------------------------------\n");
 }
 
 void free_quads(){
