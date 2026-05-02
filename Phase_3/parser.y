@@ -13,6 +13,8 @@
 #include "expr.h"
 #include "quad.h"
 
+#define NO_LABEL -1
+
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
 Token t;
@@ -65,6 +67,10 @@ void yyerror(const char *s);
 %left LEFT_BRACKET RIGHT_BRACKET
 %nonassoc IFX
 
+%type <exprNode> expr term primary lvalue const assignexpr member call
+%type <exprList> elist
+%type <stmtNode> stmt
+
 %%
 
 program:
@@ -106,12 +112,40 @@ stmt:
 ;
 
 expr:
-	assignexpr { print_reduce("expr", "assignexpr"); }
-	| expr PLUS expr { print_reduce("expr", "expr PLUS expr"); }
-	| expr MINUS expr { print_reduce("expr", "expr MINUS expr"); }
-        | expr MULTIPLY expr { print_reduce("expr", "expr MULTIPLY expr"); }
-        | expr DIVISION expr { print_reduce("expr", "expr DIVISION expr"); }
-        | expr MOD expr { print_reduce("expr", "expr MOD expr"); }
+	assignexpr {
+		$$ = $1;
+		print_reduce("expr", "assignexpr");
+	}
+	| expr PLUS expr {
+		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+		$$ = lvalue_expr(tmp, arithexpr);
+		new_quad(_add, $$, $1, $3, NO_LABEL);
+		print_reduce("expr", "expr PLUS expr"); 
+	}
+	| expr MINUS expr {
+		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+                $$ = lvalue_expr(tmp, arithexpr);
+                new_quad(_sub, $$, $1, $3, NO_LABEL);
+		print_reduce("expr", "expr MINUS expr"); 
+	}
+        | expr MULTIPLY expr {
+                Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+                $$ = lvalue_expr(tmp, arithexpr);
+                new_quad(_mul, $$, $1, $3, NO_LABEL);
+                print_reduce("expr", "expr MULTIPLY expr"); 
+	}
+        | expr DIVISION expr {
+                Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+                $$ = lvalue_expr(tmp, arithexpr);
+                new_quad(_div, $$, $1, $3, NO_LABEL);
+                print_reduce("expr", "expr DIVISION expr");
+	}
+        | expr MOD expr {
+                Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+                $$ = lvalue_expr(tmp, arithexpr);
+                new_quad(_mod, $$, $1, $3, NO_LABEL);
+                print_reduce("expr", "expr MOD expr"); 
+	}
         | expr GREATER expr { print_reduce("expr", "expr GREATER expr"); }
         | expr GREATER_EQUAL expr { print_reduce("expr", "expr GREATER_EQUAL expr"); }
         | expr LESS expr { print_reduce("expr", "expr LESS expr"); }
@@ -120,18 +154,45 @@ expr:
         | expr NOT_EQUAL expr { print_reduce("expr", "expr NOT_EQUAL expr"); }
         | expr AND expr { print_reduce("expr", "expr AND expr"); }
         | expr OR expr { print_reduce("expr", "expr OR expr"); }
-	| term { print_reduce("expr", "term"); }
+	| term { 
+		$$ = $1;
+		print_reduce("expr", "term");
+	}
 ;
 
 term:
-    	LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { print_reduce("term", "LEFT_PARENTHESIS expr RIGHT_PARENTHESIS"); }
-	| MINUS expr %prec UMINUS { print_reduce("term", "MINUS expr"); }
-	| NOT expr { print_reduce("term", "NOT expr"); }
-	| PLUS_PLUS lvalue { print_reduce("term", "PLUS_PLUS lvalue"); }
-	| lvalue PLUS_PLUS { print_reduce("term", "lvalue PLUS_PLUS"); }
-	| MINUS_MINUS lvalue { print_reduce("term", "MINUS_MINUS lvalue"); }
-	| lvalue MINUS_MINUS { print_reduce("term", "lvalue MINUS_MINUS"); }
-	| primary { print_reduce("term", "primary"); }
+    	LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { 
+		$$ = $2;
+		print_reduce("term", "LEFT_PARENTHESIS expr RIGHT_PARENTHESIS"); 
+	}
+	| MINUS expr %prec UMINUS { 
+		$$ = $2;
+		print_reduce("term", "MINUS expr");
+	}
+	| NOT expr {
+		$$ = $2;
+		print_reduce("term", "NOT expr");
+	}
+	| PLUS_PLUS lvalue {
+		$$ = $2;
+		print_reduce("term", "PLUS_PLUS lvalue"); 
+	}
+	| lvalue PLUS_PLUS {
+		$$ = $1;
+		print_reduce("term", "lvalue PLUS_PLUS");
+	}
+	| MINUS_MINUS lvalue {
+		$$ = $2;
+		print_reduce("term", "MINUS_MINUS lvalue"); 
+	}
+	| lvalue MINUS_MINUS {
+		$$ = $1;
+		print_reduce("term", "lvalue MINUS_MINUS");
+	}
+	| primary { 
+		$$ = $1;
+		print_reduce("term", "primary"); 
+	}
 ;
 
 assignexpr:
@@ -144,16 +205,25 @@ assignexpr:
 			}
 		}
 
+		new_quad(_assign, $1, $3, NULL, NO_LABEL);	
+		$$ = $1;
+
 		print_reduce("assignexpr", "lvalue ASSIGN expr"); 
 	}
 ;
 
 primary:
-       	lvalue { print_reduce("primary", "lvalue"); }
+       	lvalue { 
+		$$ = $1;
+		print_reduce("primary", "lvalue");
+	}
 	| call { print_reduce("primary", "call"); }
 	| objectdef { print_reduce("primary", "objectdef"); }
 	| LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { print_reduce("primary", "LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS"); } 
-	| const { print_reduce("primary", "const"); }
+	| const {
+		$$ = $1;
+		print_reduce("primary", "const");
+	}
 ;
 
 lvalue:
@@ -197,7 +267,8 @@ lvalue:
 			current_lvalue = s;
 		}
 
-		{ print_reduce("lvalue", "ID"); }
+		$$ = lvalue_expr(s, var);
+		print_reduce("lvalue", "ID");
 	}
 	| LOCAL ID { /* if the symbol doesn't exist or is hidden in current scope and not library function name, then it's added */
 		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
@@ -219,6 +290,7 @@ lvalue:
 			SymTable_put(sym_table, s);
                 }
 
+		$$ = lvalue_expr(s, var);
 		print_reduce("lvalue", "LOCAL ID");
         } 
 	| DOUBLE_COLON ID { /* lookup in scope 0 */
@@ -229,8 +301,9 @@ lvalue:
 			sprintf(error_message, "ERROR: undefined global variable %s at line %d", $2, t.line);
 			add_new_error(error_message);
 		}
-
-		{ print_reduce("lvalue", "DOUBLE_COLON ID"); }
+	
+		$$ = lvalue_expr(s, var);
+		print_reduce("lvalue", "DOUBLE_COLON ID");
 	}
 	| member { print_reduce("lvalue", "member"); }
 ;
@@ -394,12 +467,30 @@ funcdef:
 ;
 
 const:
-   	CONST_INT { print_reduce("const", "CONST_INT"); }
-	| CONST_REAL { print_reduce("const", "CONST_REAL"); }
-	| STRING { print_reduce("const", "STRING"); }
-	| NIL { print_reduce("const", "NIL"); }
-	| TRUE { print_reduce("const", "TRUE"); }
-	| FALSE { print_reduce("const", "FALSE"); }
+   	CONST_INT {
+		$$ = num_const_expr($1); 
+		print_reduce("const", "CONST_INT");
+	}
+	| CONST_REAL {
+		$$ = num_const_expr($1);
+		print_reduce("const", "CONST_REAL"); 
+	}
+	| STRING { 
+		$$ = str_const_expr($1);
+		print_reduce("const", "STRING"); 
+	}
+	| NIL { 
+		$$ = nil_expr();
+		print_reduce("const", "NIL"); 
+	}
+	| TRUE {
+		$$ = bool_const_expr(1); 
+		print_reduce("const", "TRUE"); 
+	}
+	| FALSE {
+		$$ = bool_const_expr(0);
+		print_reduce("const", "FALSE");
+	}
 ;
 
 idlist:

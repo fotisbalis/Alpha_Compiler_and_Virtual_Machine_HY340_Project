@@ -1,11 +1,8 @@
-function f() {
-    local x;
-
-    function g() {
-
-        function h() {
-            x = 5;
-        }
-
-    }
-}
+x = 1;
+y = 2;
+z = x;
+x = 1 + 2;
+y = x * 3;
+z = y - 4;
+w = z / 2;
+k = w % 3;

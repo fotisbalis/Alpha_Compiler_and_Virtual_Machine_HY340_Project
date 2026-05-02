@@ -11,7 +11,7 @@ static int count = 0;
 static int capacity = 0;
 static Quad *Quads = NULL;
 
-Quad* create_quad(opcode op, Expr *arg1, Expr *arg2, Expr *res, int label){
+Quad* create_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label){
 	
 	Quad *quad = malloc(sizeof(Quad));
 
@@ -24,7 +24,7 @@ Quad* create_quad(opcode op, Expr *arg1, Expr *arg2, Expr *res, int label){
 	return quad;
 }
 
-void add_new_quad(Quad quad){
+void add_quad(Quad quad){
 
 	if(count >= capacity) expand_quads();
 
@@ -34,11 +34,20 @@ void add_new_quad(Quad quad){
 	count++;
 }
 
+void new_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label){
+
+	Quad *quad = create_quad(op, res, arg1, arg2, label);
+
+	add_quad(*quad);
+
+	free(quad);
+}
+
 void expand_quads(){
 	
 	Quad *tmpQuads;
 	
-	capacity += 100;
+	capacity += 128;
 
 	tmpQuads = realloc(Quads, capacity * sizeof(Quad));
 
