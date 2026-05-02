@@ -166,7 +166,9 @@ term:
 		print_reduce("term", "LEFT_PARENTHESIS expr RIGHT_PARENTHESIS"); 
 	}
 	| MINUS expr %prec UMINUS { 
-		$$ = $2;
+		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+                $$ = lvalue_expr(tmp, arithexpr);
+                new_quad(_uminus, $$, $2, NULL, NO_LABEL);
 		print_reduce("term", "MINUS expr");
 	}
 	| NOT expr {

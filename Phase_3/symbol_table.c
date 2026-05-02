@@ -190,6 +190,9 @@ void SymTable_print(SymTable_T oSymTable){
         		for(n = oSymTable->buckets[j]; n != NULL; n = n->next) {
 				Symbol *s = n->value;
 				
+				if(strcmp(s->type, "tmp variable") == 0)
+					continue;
+
 				if(s->scope == i)
             				printf("\"%s\" [%s]  (line %d) (scope %d)\n", s->name, s->type, s->line, s->scope);
 			}
