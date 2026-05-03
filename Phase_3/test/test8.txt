@@ -1,6 +1,7 @@
-function f(){
-    x = 10;
-    function g(){
-        x = 5;   // ERROR
-    }
-}
+a = 1;
+b = 2;
+if (a < b)
+    x = 5;
+else
+    x = 7;
+y = 9;

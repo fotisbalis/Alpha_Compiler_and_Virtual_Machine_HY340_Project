@@ -14,6 +14,8 @@
 #include "quad.h"
 
 #define NO_LABEL -1
+#define True 1
+#define False 0
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
@@ -70,6 +72,7 @@ void yyerror(const char *s);
 %type <exprNode> expr term primary lvalue const assignexpr member call
 %type <exprList> elist
 %type <stmtNode> stmt
+%type <quadID> ifcond else
 
 %%
 
@@ -579,13 +582,49 @@ idlist:
 	| /* empty */ { print_reduce("idlist", "empty"); }
 ;
 
-ifstmt:
-	IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt %prec IFX { print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt"); }
-	| IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt { print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt"); }
+ifcond:
+        IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+		$$ = get_quad_count();
+
+		new_quad(if_eq, NULL, $3, bool_const_expr(True), NO_LABEL);
+		new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+	}
 ;
 
-elsestmt:
-	ELSE stmt { print_reduce("elsestmt", "ELSE stmt"); }
+ifstmt:
+	ifcond stmt %prec IFX {
+		int if_quadID = $1;		
+		int if_quad_label = if_quadID + 2;
+		int false_jump_quadID = if_quadID + 1;
+		int false_jump_quad_label = get_quad_count();		
+
+		add_pending_label(if_quadID, if_quad_label);
+		add_pending_label(false_jump_quadID, false_jump_quad_label);
+
+		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt"); 
+	}
+	| ifcond stmt else stmt { 
+		int if_quadID = $1;
+                int if_quad_label = if_quadID + 2;
+                int false_jump_quadID = if_quadID + 1;
+		
+		int else_jump_quadID = $3;
+        	int else_stmt_label = else_jump_quadID + 1;
+        	int after_else_label = get_quad_count();
+
+		add_pending_label(if_quadID, if_quad_label);
+		add_pending_label(false_jump_quadID, else_stmt_label);
+		add_pending_label(else_jump_quadID, after_else_label);
+
+		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt"); 
+	}
+;
+
+else:
+	ELSE {
+		$$ = get_quad_count();
+        	new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+	}
 ;
 
 whilestmt:
