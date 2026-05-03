@@ -74,7 +74,7 @@ void yyerror(const char *s);
 
 %type <exprNode> expr term primary lvalue const assignexpr member call
 %type <exprList> elist
-%type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt
+%type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt funcdef
 %type <quadID> ifcond elsestart whilestart
 %type <whileInfo> whilecond
 
@@ -98,18 +98,36 @@ statements:
 
 		print_reduce("statements", "stmt statement");
 	} 
-	| LINE_COMMENT statements { print_reduce("statements", "LINE_COMMENT statements"); }
-	| BLOCK_COMMENT statements { print_reduce("statements", "BLOCK_COMMENT statements"); }
-	| NESTED_COMMENT statements { print_reduce("statements", "NESTED_COMMENT statements"); }
+	| LINE_COMMENT statements { 
+		$$ = $2;
+		print_reduce("statements", "LINE_COMMENT statements"); 
+	}
+	| BLOCK_COMMENT statements {
+                $$ = $2;
+                print_reduce("statements", "BLOCK_COMMENT statements"); 
+	}
+	| NESTED_COMMENT statements {
+                $$ = $2;
+                print_reduce("statements", "NESTED_COMMENT statements"); 
+	}
 
 stmt:
 	expr SEMI_COLON {
 		$$ = create_stmt();
 		print_reduce("stmt", "expr SEMI_COLON"); 
 	}
-	| ifstmt { print_reduce("stmt", "ifstmt"); }
-	| whilestmt { print_reduce("stmt", "whilestmt"); }
-	| forstmt { print_reduce("stmt", "forstmt"); }
+	| ifstmt {
+                $$ = $1;
+                print_reduce("stmt", "ifstmt"); 
+	}
+	| whilestmt {
+                $$ = $1;
+                print_reduce("stmt", "whilestmt"); 
+	}
+	| forstmt {
+                $$ = $1;
+                print_reduce("stmt", "forstmt"); 
+	}
 	| returnstmt {
 		$$ = create_stmt();
 		print_reduce("stmt", "returnstmt"); 
@@ -146,8 +164,14 @@ stmt:
 
 		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
-	| block { print_reduce("stmt", "block"); }
-	| funcdef { print_reduce("stmt", "funcdef"); }
+	| block {
+                $$ = $1;
+                print_reduce("stmt", "block"); 
+	}
+	| funcdef {
+                $$ = $1;
+                print_reduce("stmt", "funcdef"); 
+	}
 	| SEMI_COLON {
 		$$ = create_stmt();
 		print_reduce("stmt", "SEMI_COLON"); 
@@ -466,7 +490,9 @@ block:
 		current_scope++;
 	} 	
 	statements 
-	RIGHT_BRACE {	
+	RIGHT_BRACE {
+                $$ = $3;
+			
 		SymTable_hide_scope(sym_table, current_scope); 
 		current_scope--;
 
@@ -641,6 +667,8 @@ ifstmt:
 		fill_pending_label(if_quadID, if_quad_label);
 		fill_pending_label(false_jump_quadID, false_jump_quad_label);
 
+		$$ = $2;
+
 		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt"); 
 	}
 	| ifcond stmt elsestart stmt { 
@@ -655,6 +683,11 @@ ifstmt:
 		fill_pending_label(if_quadID, if_quad_label);
 		fill_pending_label(false_jump_quadID, else_stmt_label);
 		fill_pending_label(else_jump_quadID, after_else_label);
+
+		$$ = create_stmt();
+		$$->BreakLabels = merge_pending_labels($2->BreakLabels, $4->BreakLabels);
+		$$->ContinueLabels = merge_pending_labels($2->ContinueLabels, $4->ContinueLabels);
+		$$->JumpLabels = merge_pending_labels($2->JumpLabels, $4->JumpLabels);
 
 		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt ELSE stmt"); 
 	}
@@ -699,7 +732,7 @@ whilestmt:
 		
 		fill_pending_label(false_jump_quadID, get_quad_count() + 1);
 
-		fill_pending_labels_of_list($3->ContinueLabels, get_quad_count() + 1);
+		fill_pending_labels_of_list($3->BreakLabels, get_quad_count() + 1);
 
 		new_quad(_jump, NULL, NULL, NULL, $1.cond_quadID);
 
@@ -724,6 +757,8 @@ forstmt:
 
 returnstmt:
 	RETURN returnvalue SEMI_COLON {
+		$$ = create_stmt();
+
 		if(function_depth == -1){
 			char error_message[200];
 			sprintf(error_message ,"ERROR: return called outside of function at line %d", t.line); 
