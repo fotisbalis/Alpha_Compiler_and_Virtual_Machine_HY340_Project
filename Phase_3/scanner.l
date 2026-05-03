@@ -6,6 +6,7 @@
 #include "token.h"
 #include "pending_labels.h"
 #include "expr.h"
+#include "while.h"
 #include "parser.tab.h"
 
 #define YY_DECL int alpha_yylex(Token *token)

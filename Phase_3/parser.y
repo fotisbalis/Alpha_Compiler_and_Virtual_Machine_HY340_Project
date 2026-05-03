@@ -12,6 +12,7 @@
 #include "pending_labels.h"
 #include "expr.h"
 #include "quad.h"
+#include "while.h"
 
 #define NO_LABEL -1
 #define True 1
@@ -42,6 +43,7 @@ void yyerror(const char *s);
 	Stmt* stmtNode;
 	PendingLabel* pendingLabels;
 	int quadID;
+	WhileInfo whileInfo;
 }
 
 %token LINE_COMMENT NESTED_COMMENT BLOCK_COMMENT
@@ -72,7 +74,8 @@ void yyerror(const char *s);
 %type <exprNode> expr term primary lvalue const assignexpr member call
 %type <exprList> elist
 %type <stmtNode> stmt
-%type <quadID> ifcond else
+%type <quadID> ifcond elsestart whilestart
+%type <whileInfo> whilecond
 
 %%
 
@@ -603,7 +606,7 @@ ifstmt:
 
 		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt"); 
 	}
-	| ifcond stmt else stmt { 
+	| ifcond stmt elsestart stmt { 
 		int if_quadID = $1;
                 int if_quad_label = if_quadID + 2;
                 int false_jump_quadID = if_quadID + 1;
@@ -616,24 +619,50 @@ ifstmt:
 		add_pending_label(false_jump_quadID, else_stmt_label);
 		add_pending_label(else_jump_quadID, after_else_label);
 
-		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt elsestmt"); 
+		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt ELSE stmt"); 
 	}
 ;
 
-else:
+elsestart:
 	ELSE {
 		$$ = get_quad_count();
+
         	new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
 	}
 ;
 
+whilestart:
+	WHILE {
+		$$ = get_quad_count();
+	}
+;
+
+whilecond:
+	whilestart LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+		$$.cond_quadID = $1;
+		$$.if_true_quadID = get_quad_count();
+
+		new_quad(if_eq, NULL, $3, bool_const_expr(True), NO_LABEL);
+                new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+	}
+;
+
 whilestmt:
-	 WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
+	whilecond
         { loop_depth++; }
-        stmt
-        { 
-		loop_depth--; 
+	stmt
+        {
+		int if_quadID = $1.if_true_quadID;
+		int false_jump_quadID = if_quadID + 1;
+		int body_label = if_quadID + 2;
 		
+		add_pending_label(if_quadID, body_label);
+        	add_pending_label(false_jump_quadID, get_quad_count() + 1);
+
+		new_quad(_jump, NULL, NULL, NULL, $1.cond_quadID);
+
+		loop_depth--;
+
 		print_reduce("whilestmt", "WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt");
 	}
 ;

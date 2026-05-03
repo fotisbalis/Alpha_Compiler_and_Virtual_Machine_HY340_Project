@@ -44,7 +44,7 @@ typedef struct Quad{
 
 Quad* create_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label);
 
-void add_new_quad(Quad quad);
+void add_quad(Quad quad);
 
 void new_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label);
 

@@ -73,35 +73,36 @@ void add_pending_label(int quadID, int label){
 }
 
 char* opcode_to_string(opcode op){
-    switch(op){
-        case _assign:      return "assign";
-        case _add:         return "add";
-        case _sub:         return "sub";
-        case _mul:         return "mul";
-        case _div:         return "div";
-        case _mod:         return "mod";
-        case _uminus:      return "uminus";
-        case _and:         return "and";
-        case _or:          return "or";
-        case _not:         return "not";
-        case if_eq:        return "if_eq";
-        case if_noteq:     return "if_noteq";
-        case if_lesseq:    return "if_lesseq";
-        case if_greatereq: return "if_greatereq";
-        case if_less:      return "if_less";
-        case if_greater:   return "if_greater";
-        case _jump:        return "jump";
-        case _call:        return "call";
-        case _param:       return "param";
-        case _return:      return "return";
-        case getretval:    return "getretval";
-        case funcstart:    return "funcstart";
-        case funcend:      return "funcend";
-	case tablecreate:  return "tablecreate";
-	case tablegetelem: return "tablegetelem";
-        case tablesetelem: return "tablesetelem";
-        default:
-			   return NULL;
+    
+	switch(op){
+        	case _assign:      return "assign";
+        	case _add:         return "add";
+        	case _sub:         return "sub";
+		case _mul:         return "mul";
+		case _div:         return "div";
+		case _mod:         return "mod";
+	        case _uminus:      return "uminus";
+        	case _and:         return "and";
+	        case _or:          return "or";
+        	case _not:         return "not";
+	        case if_eq:        return "if_eq";
+       		case if_noteq:     return "if_noteq";
+	        case if_lesseq:    return "if_lesseq";
+        	case if_greatereq: return "if_greatereq";
+	        case if_less:      return "if_less";
+        	case if_greater:   return "if_greater";
+	        case _jump:        return "jump";
+        	case _call:        return "call";
+	        case _param:       return "param";
+        	case _return:      return "return";
+	        case getretval:    return "getretval";
+        	case funcstart:    return "funcstart";
+        	case funcend:      return "funcend";
+		case tablecreate:  return "tablecreate";
+		case tablegetelem: return "tablegetelem";
+        	case tablesetelem: return "tablesetelem";
+        	default:
+			return NULL;
     }
 }
 
