@@ -7,11 +7,10 @@ typedef struct PendingLabel {
         struct PendingLabel *next;
 } PendingLabel;
 
-/* Stores pending labels of a statement */
-typedef struct Stmt {
-        PendingLabel *JumpLabels; /* jump to next part of the statement */
-        PendingLabel *BreakLabels;
-        PendingLabel *ContinueLabels;
-} Stmt;
+PendingLabel* create_pending_label(int quadID);
+
+void fill_pending_labels_of_list(PendingLabel *list, int label);
+
+PendingLabel* merge_pending_labels(PendingLabel *l1, PendingLabel *l2);
 
 #endif

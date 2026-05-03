@@ -13,6 +13,7 @@
 #include "expr.h"
 #include "quad.h"
 #include "while.h"
+#include "stmt.h"
 
 #define NO_LABEL -1
 #define True 1
@@ -73,7 +74,7 @@ void yyerror(const char *s);
 
 %type <exprNode> expr term primary lvalue const assignexpr member call
 %type <exprList> elist
-%type <stmtNode> stmt
+%type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt
 %type <quadID> ifcond elsestart whilestart
 %type <whileInfo> whilecond
 
@@ -84,37 +85,73 @@ program:
 ;
 
 statements:
-	/* empty */ { print_reduce("statements", "empty"); }
-	| stmt statements { print_reduce("statements", "stmt statement"); } 
+	/* empty */ { 
+		$$ = create_stmt();
+		print_reduce("statements", "empty"); 
+	}
+	| stmt statements {
+		$$ = create_stmt();
+		
+		$$->BreakLabels = merge_pending_labels($1->BreakLabels, $2->BreakLabels);
+        	$$->ContinueLabels = merge_pending_labels($1->ContinueLabels, $2->ContinueLabels);
+        	$$->JumpLabels = merge_pending_labels($1->JumpLabels, $2->JumpLabels);		
+
+		print_reduce("statements", "stmt statement");
+	} 
 	| LINE_COMMENT statements { print_reduce("statements", "LINE_COMMENT statements"); }
 	| BLOCK_COMMENT statements { print_reduce("statements", "BLOCK_COMMENT statements"); }
 	| NESTED_COMMENT statements { print_reduce("statements", "NESTED_COMMENT statements"); }
 
 stmt:
-	expr SEMI_COLON { print_reduce("stmt", "expr SEMI_COLON"); }
+	expr SEMI_COLON {
+		$$ = create_stmt();
+		print_reduce("stmt", "expr SEMI_COLON"); 
+	}
 	| ifstmt { print_reduce("stmt", "ifstmt"); }
 	| whilestmt { print_reduce("stmt", "whilestmt"); }
 	| forstmt { print_reduce("stmt", "forstmt"); }
-	| returnstmt { print_reduce("stmt", "returnstmt"); }
+	| returnstmt {
+		$$ = create_stmt();
+		print_reduce("stmt", "returnstmt"); 
+	}
 	| BREAK SEMI_COLON {
+		$$ = create_stmt();
+
 		if(loop_depth == -1){
 			char error_message[200];
 			sprintf(error_message, "ERROR: break called outside of loop at line %d", t.line);
 			add_new_error(error_message);				
 		}
+		else {
+			int quad = get_quad_count();
+			new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+			$$->BreakLabels = create_pending_label(quad);
+		}
+	
 		print_reduce("stmt", "BREAK SEMI_COLON");
 	}
 	| CONTINUE SEMI_COLON {
+		$$ = create_stmt();
+
                 if(loop_depth == -1){
                         char error_message[200];
                         sprintf(error_message, "ERROR: continue called outside of loop at line %d", t.line);
                         add_new_error(error_message);
                 }
+		else {
+                        int quad = get_quad_count();
+                        new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+                        $$->ContinueLabels = create_pending_label(quad);
+                }
+
 		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
 	| block { print_reduce("stmt", "block"); }
 	| funcdef { print_reduce("stmt", "funcdef"); }
-	| SEMI_COLON { print_reduce("stmt", "SEMI_COLON"); }
+	| SEMI_COLON {
+		$$ = create_stmt();
+		print_reduce("stmt", "SEMI_COLON"); 
+	}
 ;
 
 expr:
@@ -601,8 +638,8 @@ ifstmt:
 		int false_jump_quadID = if_quadID + 1;
 		int false_jump_quad_label = get_quad_count();		
 
-		add_pending_label(if_quadID, if_quad_label);
-		add_pending_label(false_jump_quadID, false_jump_quad_label);
+		fill_pending_label(if_quadID, if_quad_label);
+		fill_pending_label(false_jump_quadID, false_jump_quad_label);
 
 		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt"); 
 	}
@@ -615,9 +652,9 @@ ifstmt:
         	int else_stmt_label = else_jump_quadID + 1;
         	int after_else_label = get_quad_count();
 
-		add_pending_label(if_quadID, if_quad_label);
-		add_pending_label(false_jump_quadID, else_stmt_label);
-		add_pending_label(else_jump_quadID, after_else_label);
+		fill_pending_label(if_quadID, if_quad_label);
+		fill_pending_label(false_jump_quadID, else_stmt_label);
+		fill_pending_label(else_jump_quadID, after_else_label);
 
 		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt ELSE stmt"); 
 	}
@@ -656,10 +693,17 @@ whilestmt:
 		int false_jump_quadID = if_quadID + 1;
 		int body_label = if_quadID + 2;
 		
-		add_pending_label(if_quadID, body_label);
-        	add_pending_label(false_jump_quadID, get_quad_count() + 1);
+		fill_pending_label(if_quadID, body_label);
+        	
+		fill_pending_labels_of_list($3->ContinueLabels, $1.cond_quadID);	
+		
+		fill_pending_label(false_jump_quadID, get_quad_count() + 1);
+
+		fill_pending_labels_of_list($3->ContinueLabels, get_quad_count() + 1);
 
 		new_quad(_jump, NULL, NULL, NULL, $1.cond_quadID);
+
+		$$ = create_stmt();
 
 		loop_depth--;
 

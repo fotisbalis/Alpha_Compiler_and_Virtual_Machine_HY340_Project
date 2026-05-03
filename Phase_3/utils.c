@@ -53,10 +53,10 @@ Expr* handle_comparison_quad(opcode op, Expr *arg1, Expr *arg2, SymTable_T sym_t
 	int jump_quadID = get_quad_count();
 	new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
 
-	add_pending_label(if_quadID, get_quad_count());
+	fill_pending_label(if_quadID, get_quad_count());
 	new_quad(_assign, expr, NULL, bool_const_expr(True), NO_LABEL);
 
-	add_pending_label(jump_quadID, get_quad_count());
+	fill_pending_label(jump_quadID, get_quad_count());
 
 	return expr;
 }

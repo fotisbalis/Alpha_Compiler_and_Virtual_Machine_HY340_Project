@@ -64,7 +64,7 @@ int get_quad_count(){
 	return count;
 }
 
-void add_pending_label(int quadID, int label){
+void fill_pending_label(int quadID, int label){
 
 	assert(quadID >= 0 && quadID < count);
 	assert(Quads[quadID].label == NO_LABEL);

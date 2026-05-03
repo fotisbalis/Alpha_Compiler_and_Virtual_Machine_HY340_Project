@@ -1,8 +1,7 @@
-x = 5;
-
-function foo() {
-  ::x = 3;
-  function g() {
-    x = 9;
-  }
+x = 0;
+while (x < 5) {
+    x = x + 1;
+    continue;
+    y = 99;
 }
+z = 1;

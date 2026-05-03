@@ -54,7 +54,7 @@ Quad* get_quads();
 
 int get_quad_count();
 
-void add_pending_label(int quadID, int label);
+void fill_pending_label(int quadID, int label);
 
 char* opcode_to_string(opcode op);
 
