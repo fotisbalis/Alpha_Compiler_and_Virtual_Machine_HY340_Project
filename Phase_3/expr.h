@@ -22,6 +22,7 @@ typedef enum expr_type {
 typedef struct Expr {
 	Symbol *sym;
 	expr_type type;
+	struct Expr *table_index;
 	double num_const;
 	char *str_const;
 	int bool_const;

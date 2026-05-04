@@ -23,4 +23,8 @@ void handle_param_quads(ExprList *params);
 
 Expr* call_function(Expr *func, ExprList *elist, SymTable_T sym_table, int current_scope, int line);
 
+Expr* create_member(Expr *table, char *name, Expr *index);
+
+Expr* get_table(Expr *expr, SymTable_T sym_table, int current_scope, int line);
+
 #endif

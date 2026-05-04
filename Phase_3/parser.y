@@ -312,7 +312,11 @@ assignexpr:
 			}
 		}
 
-		new_quad(_assign, $1, $3, NULL, NO_LABEL);	
+		if($1->type != tableitem)
+			new_quad(_assign, $1, $3, NULL, NO_LABEL);	
+		else
+			new_quad(tablesetelem, lvalue_expr($1->sym, var), $1->table_index, $3, NO_LABEL);
+
 		$$ = $1;
 
 		print_reduce("assignexpr", "lvalue ASSIGN expr"); 
@@ -321,7 +325,7 @@ assignexpr:
 
 primary:
        	lvalue { 
-		$$ = $1;
+		$$ = get_table($1, sym_table, current_scope, t.line);
 		print_reduce("primary", "lvalue");
 	}
 	| call {
@@ -419,14 +423,42 @@ lvalue:
 		$$ = lvalue_expr(s, var);
 		print_reduce("lvalue", "DOUBLE_COLON ID");
 	}
-	| member { print_reduce("lvalue", "member"); }
+	| member { 
+		$$ = $1;
+
+		print_reduce("lvalue", "member"); 
+	}
 ;
 
 member:
-	lvalue DOT ID { print_reduce("member", "lvalue DOT ID"); }
-	| lvalue LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "lvalue LEFT_BRACKET expr RIGHT_BRACKET"); }
-	| call DOT ID { print_reduce("member", "call DOT ID"); }
-        | call LEFT_BRACKET expr RIGHT_BRACKET { print_reduce("member", "call LEFT_BRACKET expr RIGHT_BRACKET"); }
+	lvalue DOT ID {
+		Expr *table = get_table($1, sym_table, current_scope, t.line);
+		$$ = create_member(table, $3, NULL);		
+
+		print_reduce("member", "lvalue DOT ID"); 
+	}
+	| lvalue LEFT_BRACKET expr RIGHT_BRACKET {
+		Expr *table = get_table($1, sym_table, current_scope, t.line);
+
+		$$ = create_expr(tableitem);
+		$$ = create_member(table, NULL, $3);
+
+		print_reduce("member", "lvalue LEFT_BRACKET expr RIGHT_BRACKET");
+	}
+	| call DOT ID {
+		Expr *table = get_table($1, sym_table, current_scope, t.line);
+		$$ = create_member(table, $3, NULL);
+
+		print_reduce("member", "call DOT ID");
+	}
+        | call LEFT_BRACKET expr RIGHT_BRACKET { 
+		Expr *table = get_table($1, sym_table, current_scope, t.line);
+
+                $$ = create_expr(tableitem);
+                $$ = create_member(table, NULL, $3);
+
+		print_reduce("member", "call LEFT_BRACKET expr RIGHT_BRACKET"); 
+	}
 ;
 
 call:

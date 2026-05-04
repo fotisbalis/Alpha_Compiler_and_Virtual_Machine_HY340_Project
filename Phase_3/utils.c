@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "utils.h"
 
@@ -95,8 +96,30 @@ Expr* call_function(Expr *func, ExprList *params, SymTable_T sym_table, int curr
 	return res;
 }
 
+Expr* create_member(Expr *table, char *name, Expr *index){
 
+	Expr *item = create_expr(tableitem);
 
+	item->sym = table->sym;
+	
+	if(name != NULL) item->table_index = str_const_expr(name);
+	if(index != NULL) item->table_index = index;
 
+	return item;
+}
+
+Expr* get_table(Expr *item, SymTable_T sym_table, int current_scope, int line){
+
+	if(item->type != tableitem)
+		return item;
+
+	Symbol *tmp = new_tmp(sym_table, current_scope, line);
+        Expr *res = lvalue_expr(tmp, var);
+	Expr *table = lvalue_expr(item->sym, var);
+
+	new_quad(tablegetelem, res, table, item->table_index, NO_LABEL);
+
+	return res;
+}
 
 
