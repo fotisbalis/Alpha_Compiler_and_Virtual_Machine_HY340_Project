@@ -73,9 +73,9 @@ void yyerror(const char *s);
 %left LEFT_BRACKET RIGHT_BRACKET
 %nonassoc IFX
 
-%type <exprNode> expr term primary lvalue const assignexpr member call
+%type <exprNode> expr term primary lvalue const assignexpr member call funcstart funcdef returnvalue
 %type <exprList> elist callsuffix normcall
-%type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt funcdef
+%type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt
 %type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart
 %type <whileQuads> whilecond
 %type <forQuads> forcond
@@ -171,7 +171,7 @@ stmt:
                 print_reduce("stmt", "block"); 
 	}
 	| funcdef {
-                $$ = $1;
+                $$ = create_stmt();
                 print_reduce("stmt", "funcdef"); 
 	}
 	| SEMI_COLON {
@@ -536,48 +536,40 @@ block:
 	}
 ;
 
-funcdef:
-       FUNCTION ID {
-		Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
-                
-		Symbol* lib = check_for_lib_func(sym_table, $2);
+funcstart:
+	 FUNCTION ID {
+                Symbol* s = SymTable_lookup_scope(sym_table, $2, current_scope);
+
+                Symbol* lib = check_for_lib_func(sym_table, $2);
 
                 if(lib != NULL){
-			char error_message[200];
+                        char error_message[200];
                         sprintf(error_message, "ERROR: use of library function \"%s\" as function at line %d", lib->name, t.line);
-                	add_new_error(error_message);
-		}
+                        add_new_error(error_message);
+                }
 
-		else if(s != NULL && s->isActive == 1) {
-			char error_message[200];
+                else if(s != NULL && s->isActive == 1) {
+                        char error_message[200];
                         sprintf(error_message, "ERROR: redeclaration of \"%s\" at line %d", $2, t.line);
-			add_new_error(error_message);
-		}
+                        add_new_error(error_message);
+                }
 
-		else if(s == NULL || s->isActive == 0){
-			Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1, 0);
-			SymTable_put(sym_table, s);
-	
-                	function_depth++;
-			function_scopes[function_depth] = current_scope;
-			function_started = 1;
-		}
+                else if(s == NULL || s->isActive == 0){
+                        Symbol* s = Symbol_create($2, "function", current_scope, t.line, 1, 0);
+                        SymTable_put(sym_table, s);
 
-		current_scope++;
-	}
-	LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
-	LEFT_BRACE statements RIGHT_BRACE {
-		SymTable_hide_scope(sym_table, current_scope);
+			$$ = lvalue_expr(s, programfunc);
+			new_quad(funcstart, $$, NULL, NULL, NO_LABEL);
 
-		if(function_started == 1){
-			function_depth--;
-			function_started = 0;
-		}
+                        function_depth++;
+                        function_scopes[function_depth] = current_scope;
+                        function_started = 1;
+                }
 
-		current_scope--;
+                current_scope++;
 
-		print_reduce("funcdef", "FUNCTION ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
-	}
+		print_reduce("funcstart", "FUNCTION ID");
+        }
 	| FUNCTION {
                 char anonymous_name[32];
                 sprintf(anonymous_name, "anonymous_func_%d", anonymous_function_counter++);
@@ -588,25 +580,37 @@ funcdef:
                         Symbol* s = Symbol_create(anonymous_name, "function", current_scope, t.line, 1, 0);
                         SymTable_put(sym_table, s);
 
+			$$ = lvalue_expr(s, programfunc);
+                        new_quad(funcstart, $$, NULL, NULL, NO_LABEL);
+
                         function_depth++;
                         function_scopes[function_depth] = current_scope;
                         function_started = 1;
                 }
 
                 current_scope++;
-        } LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS
-        LEFT_BRACE statements RIGHT_BRACE {
-                SymTable_hide_scope(sym_table, current_scope);
 
-                if(function_started == 1){
-                        function_depth--;
-                        function_started = 0;
-                }
-
-                current_scope--;
-
-                print_reduce("funcdef", "FUNCTION LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
+		print_reduce("funcstart", "FUNCTION");
         }
+;
+
+funcdef:
+	funcstart LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
+	LEFT_BRACE statements RIGHT_BRACE {
+		SymTable_hide_scope(sym_table, current_scope);
+
+		if(function_started == 1){
+			new_quad(funcend, $1, NULL, NULL, NO_LABEL);
+			$$ = $1;			
+
+			function_depth--;
+			function_started = 0;
+		}
+
+		current_scope--;
+
+		print_reduce("funcdef", "funcstart LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
+	}
 ;
 
 const:
@@ -854,14 +858,22 @@ returnstmt:
 			sprintf(error_message ,"ERROR: return called outside of function at line %d", t.line); 
 			add_new_error(error_message);
 		}
+		else
+			new_quad(_return, $2, NULL, NULL, NO_LABEL);
 
 		print_reduce("returnstmt", "RETURN returnvalue SEMI_COLON");
 	}
 ;
 
 returnvalue:
-	expr { print_reduce("returnvalue", "expr"); }
-	| /* empty */ { print_reduce("returnvalue", "empty"); }
+	expr { 
+		$$ = $1;
+		print_reduce("returnvalue", "expr"); 
+	}
+	| /* empty */ { 
+		$$ = NULL;
+		print_reduce("returnvalue", "empty"); 
+	}
 ;
 
 %%
