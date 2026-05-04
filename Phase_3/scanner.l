@@ -6,7 +6,7 @@
 #include "token.h"
 #include "pending_labels.h"
 #include "expr.h"
-#include "while.h"
+#include "loop_info.h"
 #include "stmt.h"
 #include "parser.tab.h"
 

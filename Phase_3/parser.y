@@ -12,7 +12,7 @@
 #include "pending_labels.h"
 #include "expr.h"
 #include "quad.h"
-#include "while.h"
+#include "loop_info.h"
 #include "stmt.h"
 
 #define NO_LABEL -1
@@ -44,7 +44,8 @@ void yyerror(const char *s);
 	Stmt* stmtNode;
 	PendingLabel* pendingLabels;
 	int quadID;
-	WhileInfo whileInfo;
+	LoopQuads whileQuads;
+	LoopQuads forQuads;
 }
 
 %token LINE_COMMENT NESTED_COMMENT BLOCK_COMMENT
@@ -75,8 +76,9 @@ void yyerror(const char *s);
 %type <exprNode> expr term primary lvalue const assignexpr member call
 %type <exprList> elist
 %type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt funcdef
-%type <quadID> ifcond elsestart whilestart
-%type <whileInfo> whilecond
+%type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart
+%type <whileQuads> whilecond
+%type <forQuads> forcond
 
 %%
 
@@ -744,11 +746,65 @@ whilestmt:
 	}
 ;
 
+forstart:
+	FOR {
+                $$ = get_quad_count();
+        }
+;
+
+forcond:
+	forstart LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON {
+		$$.cond_quadID = $1 + 1;
+		$$.if_true_quadID = get_quad_count();
+
+		new_quad(if_eq, NULL, $5, bool_const_expr(True), NO_LABEL);
+                new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+	}
+;
+
+forstep:
+	forstepstart elist RIGHT_PARENTHESIS {
+		$$ = $1;
+	}
+;
+
+forstepstart:
+	{
+                $$ = get_quad_count();
+        }
+;
+
+forbodystart:
+	{
+		$$ = get_quad_count();
+	}
+;
+
 forstmt:
-	FOR LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON elist RIGHT_PARENTHESIS 
-	{ loop_depth++; }
-	stmt
+	forcond forstep
 	{ 
+		new_quad(_jump, NULL, NULL, NULL, $1.cond_quadID);
+		loop_depth++; 
+	}
+	forbodystart stmt
+	{
+		int if_quadID = $1.if_true_quadID;
+                int false_jump_quadID = if_quadID + 1;
+                int body_start = $4;
+		int step_start = $2;
+
+                fill_pending_label(if_quadID, body_start);
+
+                fill_pending_labels_of_list($5->ContinueLabels, step_start);
+
+                fill_pending_label(false_jump_quadID, get_quad_count() + 1);
+
+                fill_pending_labels_of_list($5->BreakLabels, get_quad_count() + 1);
+
+                new_quad(_jump, NULL, NULL, NULL, step_start);
+
+                $$ = create_stmt();
+
 		loop_depth--; 
 
 		print_reduce("forstmt", "FOR LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON elist RIGHT_PARENTHESIS");

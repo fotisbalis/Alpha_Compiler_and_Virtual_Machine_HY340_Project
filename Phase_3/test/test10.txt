@@ -4,6 +4,6 @@ while (x < 5) {
 	x = x + 2;
 	continue;
     }
-    else x = x + 1;
+    x = x + 1;
 }
 z = 1;
