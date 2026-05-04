@@ -487,15 +487,13 @@ methodcall:
 elist:
 	expr {
                 $$ = create_expr_list();
+		add_expr($$, $1);	
+
                 print_reduce("elist", "expr"); 
 	}
 	| elist COMMA expr {
-                $$ = create_expr_list();
+                $$ = $1;
                 add_expr($$, $3);
-
-		Expr *tmp;
-		for(tmp = $1->head; tmp != NULL; tmp = tmp->next)
-			add_expr($$, tmp);
 		
 		print_reduce("elist", "elist COMMA expr"); 
 	}

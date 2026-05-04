@@ -61,14 +61,21 @@ Expr* handle_comparison_quad(opcode op, Expr *arg1, Expr *arg2, SymTable_T sym_t
 	return expr;
 }
 
+void print_quads_reverse(Expr *expr){
+
+        if(expr == NULL)
+                return;
+
+        print_quads_reverse(expr->next);
+        new_quad(_param, NULL, expr, NULL, NO_LABEL);
+}
+
 void handle_param_quads(ExprList *params){
 
 	if(params == NULL)
 		return;
 
-	Expr *tmp;
-	for(tmp = params->head; tmp != NULL; tmp = tmp->next)
-		new_quad(_param, NULL, tmp, NULL, NO_LABEL);
+	print_quads_reverse(params->head);
 }
 
 Expr* call_function(Expr *func, ExprList *params, SymTable_T sym_table, int current_scope, int line){
