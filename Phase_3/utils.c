@@ -61,5 +61,35 @@ Expr* handle_comparison_quad(opcode op, Expr *arg1, Expr *arg2, SymTable_T sym_t
 	return expr;
 }
 
+void handle_param_quads(ExprList *params){
+
+	if(params == NULL)
+		return;
+
+	Expr *tmp;
+	for(tmp = params->head; tmp != NULL; tmp = tmp->next)
+		new_quad(_param, NULL, tmp, NULL, NO_LABEL);
+}
+
+Expr* call_function(Expr *func, ExprList *params, SymTable_T sym_table, int current_scope, int line){
+
+	Symbol *tmp;
+	Expr *res;
+
+	handle_param_quads(params);
+
+	new_quad(_call, NULL, func, NULL, NO_LABEL);
+
+	tmp = new_tmp(sym_table, current_scope, line);
+	res = lvalue_expr(tmp, var);
+
+	new_quad(getretval, res, NULL, NULL, NO_LABEL);
+
+	return res;
+}
+
+
+
+
 
 

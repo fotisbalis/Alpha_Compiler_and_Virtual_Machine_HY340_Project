@@ -18,4 +18,9 @@ Symbol* new_tmp(SymTable_T oSymTable, int scope, int line);
 /* handles if_greater, if_greater_equal, if_less... quads */
 Expr* handle_comparison_quad(opcode op, Expr *arg1, Expr *arg2, SymTable_T sym_table, int current_scope, int line);
 
+/* creates quads from an elist of params from left to right */
+void handle_param_quads(ExprList *params);
+
+Expr* call_function(Expr *func, ExprList *elist, SymTable_T sym_table, int current_scope, int line);
+
 #endif

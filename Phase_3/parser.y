@@ -74,7 +74,7 @@ void yyerror(const char *s);
 %nonassoc IFX
 
 %type <exprNode> expr term primary lvalue const assignexpr member call
-%type <exprList> elist
+%type <exprList> elist callsuffix normcall
 %type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt funcdef
 %type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart
 %type <whileQuads> whilecond
@@ -324,9 +324,16 @@ primary:
 		$$ = $1;
 		print_reduce("primary", "lvalue");
 	}
-	| call { print_reduce("primary", "call"); }
-	| objectdef { print_reduce("primary", "objectdef"); }
-	| LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { print_reduce("primary", "LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS"); } 
+	| call {
+		$$ = $1; 
+		print_reduce("primary", "call"); 
+	}
+	| objectdef {
+                print_reduce("primary", "objectdef"); 
+	}
+	| LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS {
+                print_reduce("primary", "LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS");
+	} 
 	| const {
 		$$ = $1;
 		print_reduce("primary", "const");
@@ -423,7 +430,11 @@ member:
 ;
 
 call:
-    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("call", "call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+	$$ = call_function($1, $3, sym_table, current_scope, t.line);	
+
+	print_reduce("call", "call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); 
+    }
     | lvalue callsuffix { /* check if symbol used as function is in the symbol table and if it is a function */
 	if(current_lvalue != NULL){
 		Symbol* s = SymTable_lookup(sym_table, current_lvalue->name, current_scope, function_depth, function_scopes);
@@ -443,20 +454,30 @@ call:
 		current_lvalue = NULL;
 	}
 
-	{ print_reduce("call", "lvalue callsuffix"); }
+	$$ = call_function($1, $2, sym_table, current_scope, t.line);
+
+	print_reduce("call", "lvalue callsuffix");
     }
-    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { 
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
 	print_reduce("call", "LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS");
     }
 ;
 
 callsuffix:
-	normcall { print_reduce("callsuffix", "normcall"); }
+	normcall { 
+		$$ = $1;		
+
+		print_reduce("callsuffix", "normcall"); 
+	}
 	| methodcall { print_reduce("callsuffix", "methodcall"); }
 ;
 
 normcall:
-	LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("normcall", "LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
+	LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { 
+		$$ = $2;
+
+		print_reduce("normcall", "LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); 
+	}
 ;
 
 methodcall:
@@ -464,9 +485,24 @@ methodcall:
 ;
 
 elist:
-	expr { print_reduce("elist", "expr"); }
-	| elist COMMA expr { print_reduce("elist", "elist COMMA expr"); }
-	| /* empty */ { print_reduce("elist", "empty"); }
+	expr {
+                $$ = create_expr_list();
+                print_reduce("elist", "expr"); 
+	}
+	| elist COMMA expr {
+                $$ = create_expr_list();
+                add_expr($$, $3);
+
+		Expr *tmp;
+		for(tmp = $1->head; tmp != NULL; tmp = tmp->next)
+			add_expr($$, tmp);
+		
+		print_reduce("elist", "elist COMMA expr"); 
+	}
+	| /* empty */ { 
+		$$ = create_expr_list();
+		print_reduce("elist", "empty"); 
+	}
 ;
 
 objectdef:
