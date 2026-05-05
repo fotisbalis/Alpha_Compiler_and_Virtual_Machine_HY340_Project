@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "pending_labels.h"
 #include "expr.h"
+#include "indexed.h"
 #include "quad.h"
 #include "loop_info.h"
 #include "stmt.h"
@@ -46,6 +47,8 @@ void yyerror(const char *s);
 	int quadID;
 	LoopQuads whileQuads;
 	LoopQuads forQuads;
+	Indexed* indexedNode;
+	IndexedList* indexedList;
 }
 
 %token LINE_COMMENT NESTED_COMMENT BLOCK_COMMENT
@@ -73,12 +76,14 @@ void yyerror(const char *s);
 %left LEFT_BRACKET RIGHT_BRACKET
 %nonassoc IFX
 
-%type <exprNode> expr term primary lvalue const assignexpr member call funcstart funcdef returnvalue
+%type <exprNode> expr term primary lvalue const assignexpr member call funcstart funcdef returnvalue objectdef
 %type <exprList> elist callsuffix normcall
 %type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt
 %type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart
 %type <whileQuads> whilecond
 %type <forQuads> forcond
+%type <indexedNode> indexedelem
+%type <indexedList> indexed
 
 %%
 
@@ -463,7 +468,7 @@ member:
 
 call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-	$$ = call_function($1, $3, sym_table, current_scope, t.line);	
+	$$ = make_call($1, $3, sym_table, current_scope, t.line);	
 
 	print_reduce("call", "call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); 
     }
@@ -486,7 +491,7 @@ call:
 		current_lvalue = NULL;
 	}
 
-	$$ = call_function($1, $2, sym_table, current_scope, t.line);
+	$$ = make_call($1, $2, sym_table, current_scope, t.line);
 
 	print_reduce("call", "lvalue callsuffix");
     }
@@ -536,21 +541,41 @@ elist:
 ;
 
 objectdef:
-	 LEFT_BRACKET obj RIGHT_BRACKET { print_reduce("objectdef", "LEFT_BRACKET obj RIGHT_BRACKET"); }
-;
+	LEFT_BRACKET elist RIGHT_BRACKET { 
+		$$ = create_table(sym_table, current_scope, t.line);
+		add_elist_to_table($2, $$);			
 
-obj:
-	elist { print_reduce("obj", "elist"); }
-	| indexed { print_reduce("obj", "indexed"); }
+		print_reduce("objectdef", "LEFT_BRACKET elist RIGHT_BRACKET"); 
+	}
+	| LEFT_BRACKET indexed RIGHT_BRACKET { 
+		$$ = create_table(sym_table, current_scope, t.line);
+		add_indexed_to_table($2, $$);
+
+		print_reduce("objectdef", "LEFT_BRACKET indexed RIGHT_BRACKET"); 
+	}
 ;
 
 indexed:
-	indexedelem { print_reduce("indexed", "indexedelem"); }
-	| indexed COMMA indexedelem { print_reduce("indexed", "indexed COMMA indexedelem"); }
+	indexedelem { 
+		$$ = create_indexed_list();
+		add_indexed($$, $1);	
+
+		print_reduce("indexed", "indexedelem"); 
+	}
+	| indexed COMMA indexedelem { 
+		$$ = $1;
+                add_indexed($$, $3);		
+
+		print_reduce("indexed", "indexed COMMA indexedelem"); 
+	}
 ;
 
 indexedelem:
-	   LEFT_BRACE expr COLON expr RIGHT_BRACE { print_reduce("indexedelem", "LEFT_BRACE expr COLON expr RIGHT_BRACE"); }
+	LEFT_BRACE expr COLON expr RIGHT_BRACE { 
+		$$ = create_indexed($2, $4);		
+
+		print_reduce("indexedelem", "LEFT_BRACE expr COLON expr RIGHT_BRACE"); 
+	}
 ;
 
 block:

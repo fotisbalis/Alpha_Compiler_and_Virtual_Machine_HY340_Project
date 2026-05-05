@@ -79,7 +79,7 @@ void handle_param_quads(ExprList *params){
 	print_quads_reverse(params->head);
 }
 
-Expr* call_function(Expr *func, ExprList *params, SymTable_T sym_table, int current_scope, int line){
+Expr* make_call(Expr *func, ExprList *params, SymTable_T sym_table, int current_scope, int line){
 
 	Symbol *tmp;
 	Expr *res;
@@ -120,6 +120,33 @@ Expr* get_table(Expr *item, SymTable_T sym_table, int current_scope, int line){
 	new_quad(tablegetelem, res, table, item->table_index, NO_LABEL);
 
 	return res;
+}
+
+Expr* create_table(SymTable_T sym_table, int current_scope, int line){
+
+	Symbol *tmp = new_tmp(sym_table, current_scope, line);
+        Expr *table = lvalue_expr(tmp, newtable);
+
+	new_quad(tablecreate, table, NULL, NULL, NO_LABEL);
+
+	return table;
+}
+
+void add_elist_to_table(ExprList *elist, Expr *table){
+
+	Expr *expr;
+	int index = 0;
+
+	for(expr = elist->head; expr != NULL; expr = expr->next)
+		new_quad(tablesetelem, table, num_const_expr(index++), expr, NO_LABEL);
+}
+
+void add_indexed_to_table(IndexedList *list, Expr *table){
+
+        Indexed *ind;
+
+        for(ind = list->head; ind != NULL; ind = ind->next)
+                new_quad(tablesetelem, table, ind->index, ind->val, NO_LABEL);
 }
 
 
