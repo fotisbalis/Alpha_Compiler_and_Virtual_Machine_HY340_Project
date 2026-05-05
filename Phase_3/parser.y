@@ -77,7 +77,7 @@ void yyerror(const char *s);
 %nonassoc IFX
 
 %type <exprNode> expr term primary lvalue const assignexpr member call funcstart funcdef returnvalue objectdef
-%type <exprList> elist callsuffix normcall
+%type <exprList> elist callsuffix normcall nonempty_elist
 %type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt
 %type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart
 %type <whileQuads> whilecond
@@ -338,6 +338,7 @@ primary:
 		print_reduce("primary", "call"); 
 	}
 	| objectdef {
+		$$ = $1;
                 print_reduce("primary", "objectdef"); 
 	}
 	| LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS {
@@ -522,26 +523,37 @@ methodcall:
 ;
 
 elist:
-	expr {
-                $$ = create_expr_list();
-		add_expr($$, $1);	
-
-                print_reduce("elist", "expr"); 
-	}
-	| elist COMMA expr {
+     	nonempty_elist {
                 $$ = $1;
-                add_expr($$, $3);
-		
-		print_reduce("elist", "elist COMMA expr"); 
-	}
+                print_reduce("elist", "nonempty_elist");
+    	}
 	| /* empty */ { 
 		$$ = create_expr_list();
 		print_reduce("elist", "empty"); 
 	}
 ;
 
+nonempty_elist:
+	expr {
+                $$ = create_expr_list();
+                add_expr($$, $1);
+
+                print_reduce("elist", "expr");
+        }
+        | nonempty_elist COMMA expr {
+                $$ = $1;
+                add_expr($$, $3);
+
+                print_reduce("elist", "elist COMMA expr");
+        }
+;
+
 objectdef:
-	LEFT_BRACKET elist RIGHT_BRACKET { 
+	LEFT_BRACKET RIGHT_BRACKET {
+		$$ = create_table(sym_table, current_scope, t.line);
+                print_reduce("objectdef", "LEFT_BRACKET RIGHT_BRACKET");
+	}
+	| LEFT_BRACKET nonempty_elist RIGHT_BRACKET { 
 		$$ = create_table(sym_table, current_scope, t.line);
 		add_elist_to_table($2, $$);			
 
