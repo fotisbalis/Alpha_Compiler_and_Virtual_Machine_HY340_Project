@@ -149,4 +149,54 @@ void add_indexed_to_table(IndexedList *list, Expr *table){
                 new_quad(tablesetelem, table, ind->index, ind->val, NO_LABEL);
 }
 
+Expr* handle_pre_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int current_scope, int line){
+
+	assert(op == _add || op == _sub);
+
+	Symbol *tmp = new_tmp(sym_table, current_scope, line);
+	Expr *result = lvalue_expr(tmp, assignexpr);
+
+	if(lvalue->type != tableitem){
+		new_quad(op, lvalue, lvalue, num_const_expr(1), NO_LABEL);
+		new_quad(_assign, result, lvalue, NULL, NO_LABEL);
+	}
+	else {
+		Expr *table = lvalue_expr(lvalue->sym, var);
+		Symbol *tmp2 = new_tmp(sym_table, current_scope, line);		
+
+		Expr *old_value = get_table(lvalue, sym_table, current_scope, line);
+		Expr *new_value = lvalue_expr(tmp2, arithexpr);		
+
+		new_quad(op, new_value, old_value, num_const_expr(1), NO_LABEL);
+		new_quad(tablesetelem, table, lvalue->table_index, new_value, NO_LABEL);
+	}
+
+	return result;
+}
+
+Expr* handle_post_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int current_scope, int line){
+
+	assert(op == _add || op == _sub);
+
+	Symbol *tmp = new_tmp(sym_table, current_scope, line);
+        Expr *result = lvalue_expr(tmp, assignexpr);
+
+	if(lvalue->type != tableitem){
+		new_quad(_assign, result, lvalue, NULL, NO_LABEL);
+                new_quad(op, lvalue, lvalue, num_const_expr(1), NO_LABEL);
+        }
+	else{
+		Expr *table = lvalue_expr(lvalue->sym, var);
+                Symbol *tmp2 = new_tmp(sym_table, current_scope, line);
+
+		Expr *old_value = get_table(lvalue, sym_table, current_scope, line);
+                Expr *new_value = lvalue_expr(tmp2, arithexpr);
+
+		new_quad(_assign, result, old_value, NULL, NO_LABEL);
+		new_quad(op, new_value, old_value, num_const_expr(1), NO_LABEL);
+		new_quad(tablesetelem, table, lvalue->table_index, new_value, NO_LABEL);
+	}
+
+	return result;
+}
 

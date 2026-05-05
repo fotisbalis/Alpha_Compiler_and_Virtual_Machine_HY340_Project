@@ -2,6 +2,7 @@
 #define SYMBOL_H
 
 typedef struct Symbol {
+	int id;
         char* name;
         char* type;
         int scope;

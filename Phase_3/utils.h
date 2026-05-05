@@ -34,4 +34,8 @@ void add_elist_to_table(ExprList *elist, Expr *table);
 
 void add_indexed_to_table(IndexedList *list, Expr *table);
 
+Expr* handle_pre_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int current_scope, int line);
+
+Expr* handle_post_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int current_scope, int line);
+
 #endif

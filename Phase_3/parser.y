@@ -117,6 +117,7 @@ statements:
                 $$ = $2;
                 print_reduce("statements", "NESTED_COMMENT statements"); 
 	}
+;
 
 stmt:
 	expr SEMI_COLON {
@@ -286,19 +287,19 @@ term:
 		print_reduce("term", "NOT expr");
 	}
 	| PLUS_PLUS lvalue {
-		$$ = $2;
+		$$ = handle_pre_inc_dec($2, _add, sym_table, current_scope, t.line);
 		print_reduce("term", "PLUS_PLUS lvalue"); 
 	}
 	| lvalue PLUS_PLUS {
-		$$ = $1;
+		$$ = handle_post_inc_dec($1, _add, sym_table, current_scope, t.line);
 		print_reduce("term", "lvalue PLUS_PLUS");
 	}
 	| MINUS_MINUS lvalue {
-		$$ = $2;
+		$$ = handle_pre_inc_dec($2, _sub, sym_table, current_scope, t.line);
 		print_reduce("term", "MINUS_MINUS lvalue"); 
 	}
 	| lvalue MINUS_MINUS {
-		$$ = $1;
+		$$ = handle_post_inc_dec($1, _sub, sym_table, current_scope, t.line);
 		print_reduce("term", "lvalue MINUS_MINUS");
 	}
 	| primary { 
@@ -553,17 +554,17 @@ objectdef:
 		$$ = create_table(sym_table, current_scope, t.line);
                 print_reduce("objectdef", "LEFT_BRACKET RIGHT_BRACKET");
 	}
+	| LEFT_BRACKET indexed RIGHT_BRACKET {
+                $$ = create_table(sym_table, current_scope, t.line);
+                add_indexed_to_table($2, $$);
+
+                print_reduce("objectdef", "LEFT_BRACKET indexed RIGHT_BRACKET");
+        }
 	| LEFT_BRACKET nonempty_elist RIGHT_BRACKET { 
 		$$ = create_table(sym_table, current_scope, t.line);
 		add_elist_to_table($2, $$);			
 
 		print_reduce("objectdef", "LEFT_BRACKET elist RIGHT_BRACKET"); 
-	}
-	| LEFT_BRACKET indexed RIGHT_BRACKET { 
-		$$ = create_table(sym_table, current_scope, t.line);
-		add_indexed_to_table($2, $$);
-
-		print_reduce("objectdef", "LEFT_BRACKET indexed RIGHT_BRACKET"); 
 	}
 ;
 

@@ -5,10 +5,14 @@
 
 #include "symbol.h"
 
+static int offset = 0;
+
 Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive, int isTemp){
         
 	Symbol* sym = malloc(sizeof(Symbol));
         
+	sym->id = offset++;
+
 	sym->name = strdup(name);
         sym->type = strdup(type);
 
