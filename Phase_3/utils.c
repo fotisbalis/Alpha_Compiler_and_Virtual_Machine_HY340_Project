@@ -41,6 +41,11 @@ Symbol* new_tmp(SymTable_T oSymTable, int scope, int line){
 	return tmp;	
 }
 
+void reset_tmps(){
+	
+	tmp_counter = 0;
+}
+
 Expr* handle_comparison_quad(opcode op, Expr *arg1, Expr *arg2, SymTable_T sym_table, int current_scope, int line){
 
 	Symbol *tmp = new_tmp(sym_table, current_scope, line);
@@ -108,7 +113,7 @@ Expr* create_member(Expr *table, char *name, Expr *index){
 	return item;
 }
 
-Expr* get_table(Expr *item, SymTable_T sym_table, int current_scope, int line){
+Expr* get_table_item(Expr *item, SymTable_T sym_table, int current_scope, int line){
 
 	if(item->type != tableitem)
 		return item;
@@ -164,7 +169,7 @@ Expr* handle_pre_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int curr
 		Expr *table = lvalue_expr(lvalue->sym, var);
 		Symbol *tmp2 = new_tmp(sym_table, current_scope, line);		
 
-		Expr *old_value = get_table(lvalue, sym_table, current_scope, line);
+		Expr *old_value = get_table_item(lvalue, sym_table, current_scope, line);
 		Expr *new_value = lvalue_expr(tmp2, arithexpr);		
 
 		new_quad(op, new_value, old_value, num_const_expr(1), NO_LABEL);
@@ -189,7 +194,7 @@ Expr* handle_post_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int cur
 		Expr *table = lvalue_expr(lvalue->sym, var);
                 Symbol *tmp2 = new_tmp(sym_table, current_scope, line);
 
-		Expr *old_value = get_table(lvalue, sym_table, current_scope, line);
+		Expr *old_value = get_table_item(lvalue, sym_table, current_scope, line);
                 Expr *new_value = lvalue_expr(tmp2, arithexpr);
 
 		new_quad(_assign, result, old_value, NULL, NO_LABEL);

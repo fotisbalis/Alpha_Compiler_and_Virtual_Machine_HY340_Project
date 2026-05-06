@@ -7,7 +7,7 @@
 
 #define HASH_SIZE 509
 
-int max_scope = 0;
+static int max_scope = 0;
 
 typedef struct node {
 	char *key;

@@ -126,18 +126,22 @@ stmt:
 	}
 	| ifstmt {
                 $$ = $1;
+		reset_tmps();
                 print_reduce("stmt", "ifstmt"); 
 	}
 	| whilestmt {
                 $$ = $1;
+                reset_tmps();
                 print_reduce("stmt", "whilestmt"); 
 	}
 	| forstmt {
                 $$ = $1;
+                reset_tmps();
                 print_reduce("stmt", "forstmt"); 
 	}
 	| returnstmt {
 		$$ = create_stmt();
+                reset_tmps();
 		print_reduce("stmt", "returnstmt"); 
 	}
 	| BREAK SEMI_COLON {
@@ -153,7 +157,8 @@ stmt:
 			new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
 			$$->BreakLabels = create_pending_label(quad);
 		}
-	
+		
+                reset_tmps();
 		print_reduce("stmt", "BREAK SEMI_COLON");
 	}
 	| CONTINUE SEMI_COLON {
@@ -165,11 +170,12 @@ stmt:
                         add_new_error(error_message);
                 }
 		else {
-                        int quad = get_quad_count();
+                        int quadID = get_quad_count();
                         new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
-                        $$->ContinueLabels = create_pending_label(quad);
+                        $$->ContinueLabels = create_pending_label(quadID);
                 }
-
+		
+                reset_tmps();
 		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
 	| block {
@@ -178,6 +184,7 @@ stmt:
 	}
 	| funcdef {
                 $$ = create_stmt();
+                reset_tmps();
                 print_reduce("stmt", "funcdef"); 
 	}
 	| SEMI_COLON {
@@ -195,30 +202,35 @@ expr:
 		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
 		$$ = lvalue_expr(tmp, arithexpr);
 		new_quad(_add, $$, $1, $3, NO_LABEL);
+
 		print_reduce("expr", "expr PLUS expr"); 
 	}
 	| expr MINUS expr {
 		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
                 new_quad(_sub, $$, $1, $3, NO_LABEL);
+
 		print_reduce("expr", "expr MINUS expr"); 
 	}
         | expr MULTIPLY expr {
                 Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
                 new_quad(_mul, $$, $1, $3, NO_LABEL);
+
                 print_reduce("expr", "expr MULTIPLY expr"); 
 	}
         | expr DIVISION expr {
                 Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
                 new_quad(_div, $$, $1, $3, NO_LABEL);
+
                 print_reduce("expr", "expr DIVISION expr");
 	}
         | expr MOD expr {
                 Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
                 new_quad(_mod, $$, $1, $3, NO_LABEL);
+
                 print_reduce("expr", "expr MOD expr"); 
 	}
         | expr GREATER expr {
@@ -280,6 +292,7 @@ term:
 		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
                 new_quad(_uminus, $$, $2, NULL, NO_LABEL);
+
 		print_reduce("term", "MINUS expr");
 	}
 	| NOT expr {
@@ -288,18 +301,22 @@ term:
 	}
 	| PLUS_PLUS lvalue {
 		$$ = handle_pre_inc_dec($2, _add, sym_table, current_scope, t.line);
+
 		print_reduce("term", "PLUS_PLUS lvalue"); 
 	}
 	| lvalue PLUS_PLUS {
 		$$ = handle_post_inc_dec($1, _add, sym_table, current_scope, t.line);
+
 		print_reduce("term", "lvalue PLUS_PLUS");
 	}
 	| MINUS_MINUS lvalue {
 		$$ = handle_pre_inc_dec($2, _sub, sym_table, current_scope, t.line);
+
 		print_reduce("term", "MINUS_MINUS lvalue"); 
 	}
 	| lvalue MINUS_MINUS {
 		$$ = handle_post_inc_dec($1, _sub, sym_table, current_scope, t.line);
+
 		print_reduce("term", "lvalue MINUS_MINUS");
 	}
 	| primary { 
@@ -331,7 +348,7 @@ assignexpr:
 
 primary:
        	lvalue { 
-		$$ = get_table($1, sym_table, current_scope, t.line);
+		$$ = get_table_item($1, sym_table, current_scope, t.line);
 		print_reduce("primary", "lvalue");
 	}
 	| call {
@@ -439,30 +456,30 @@ lvalue:
 
 member:
 	lvalue DOT ID {
-		Expr *table = get_table($1, sym_table, current_scope, t.line);
-		$$ = create_member(table, $3, NULL);		
+		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
+		$$ = create_member(expr, $3, NULL);		
 
 		print_reduce("member", "lvalue DOT ID"); 
 	}
 	| lvalue LEFT_BRACKET expr RIGHT_BRACKET {
-		Expr *table = get_table($1, sym_table, current_scope, t.line);
+		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
 
 		$$ = create_expr(tableitem);
-		$$ = create_member(table, NULL, $3);
+		$$ = create_member(expr, NULL, $3);
 
 		print_reduce("member", "lvalue LEFT_BRACKET expr RIGHT_BRACKET");
 	}
 	| call DOT ID {
-		Expr *table = get_table($1, sym_table, current_scope, t.line);
-		$$ = create_member(table, $3, NULL);
+		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
+		$$ = create_member(expr, $3, NULL);
 
 		print_reduce("member", "call DOT ID");
 	}
         | call LEFT_BRACKET expr RIGHT_BRACKET { 
-		Expr *table = get_table($1, sym_table, current_scope, t.line);
+		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
 
                 $$ = create_expr(tableitem);
-                $$ = create_member(table, NULL, $3);
+                $$ = create_member(expr, NULL, $3);
 
 		print_reduce("member", "call LEFT_BRACKET expr RIGHT_BRACKET"); 
 	}
