@@ -32,7 +32,7 @@ PendingLabel* merge_pending_labels(PendingLabel *l1, PendingLabel *l2){
 	if(l2 == NULL) return l1;
 
 	tmp = l1;
-	while(tmp != NULL) tmp = tmp->next;
+	while(tmp->next != NULL) tmp = tmp->next;
 
 	tmp->next = l2;
 

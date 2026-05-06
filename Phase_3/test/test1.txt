@@ -27,7 +27,7 @@ while (x < 100) {
 }
 
 for (i, j; i < 10; j++) {
-    break;
+    if((i + j) % 2 == 0) continue;
 }
 
 local c;
