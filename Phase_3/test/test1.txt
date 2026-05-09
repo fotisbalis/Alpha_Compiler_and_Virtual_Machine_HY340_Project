@@ -1,33 +1,105 @@
-// Single line comment
-/* Block comment with
-   multiple lines */
-function add(a, b) {
-    return a + b;
-}
-
-add = 5;
-
-cos;
-local c;
-local cos;
-
+a = 1;
+b = 2;
+c = 3;
+d = 4;
+e = 5;
+f = 6;
+i = 0;
+j = 1;
+k = 2;
 x = 10;
-y = 20.5;
-z = x + y * 2;
+y = 20;
+z = 30;
 
-if (x > 0) {
-    local y;
-    y = y - 1;
+r1 = a + b * c;
+r2 = (a + b) * c;
+r3 = -a;
+r4 = 5.7 % 2.1;
+
+cmp1 = a < b;
+cmp2 = a <= b;
+cmp3 = a > b;
+cmp4 = a >= b;
+cmp5 = a == b;
+cmp6 = a != b;
+
+sc1 = a or b;
+sc2 = a and b;
+sc3 = a < b or c < d and e < f;
+sc4 = not a;
+sc5 = not (a < b);
+sc6 = (a < b) + 1;
+sc7 = -(a < b or c < d);
+
+u1 = a = 100;
+u2 = b = a < c;
+u3 = c = a or b;
+
+i = 0;
+t0 = [ ++i, i = 1821, --i, i = 8 ];
+t1 = [ a < b, a or b, not (c < d) ];
+t2 = [ {1 : a}, {"x" : b}, {a + b : c * d} ];
+
+tbl = [];
+tbl.x = 1;
+tbl.y = 2;
+tbl["z"] = 3;
+v1 = tbl.x;
+v2 = tbl["y"];
+
+t.a.b = c.d.e = f.g.h;
+test().x = 1;
+print(y.z.x, "-");
+
+foo(1, 2);
+foo(a(1), b(2, 3));
+bar(a = 1, b = 2, a < b or c < d);
+
+if (a < b) {
+	x = 1;
+}
+
+if (a or b) {
+	x = 2;
 } else {
-    y = y + 1;
+	x = 3;
 }
 
-while (x < 100) {
-    x++;
+while (a < b) {
+	x = x + 1;
+	if (x == 15) {
+		break;
+	}
+	continue;
 }
 
-for (i, j; i < 10; j++) {
-    if((i + j) % 2 == 0) continue;
+for (i = 0; i < 3 or j; i++) {
+	y = y + 1;
+	if (y > 25) {
+		break;
+	}
 }
 
-local c;
+function foo(p, q, r) {
+	loc1 = p + q;
+	loc2 = p < q or q < r;
+	while (loc1 < 100 and loc2) {
+		loc1 = loc1 + 1;
+		if (loc1 == 50) {
+			break;
+		}
+	}
+	function bar(u, v, w) {
+		inner1 = u + v;
+		inner2 = not (u < v);
+		return inner1;
+	}
+	function (m, n, o) {
+		anon1 = m and n;
+		return anon1;
+	}
+	return loc2;
+}
+
+ret1 = foo(a, b, c);
+

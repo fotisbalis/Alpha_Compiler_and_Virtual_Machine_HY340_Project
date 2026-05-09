@@ -30,4 +30,8 @@ void enter_scope_space();
 
 void exit_scope_space();
 
+void reset_formal_arg_offset();
+
+void reset_function_local_offset();
+
 #endif

@@ -5,7 +5,6 @@
 
 /* Stores pending labels of a statement */
 typedef struct Stmt {
-        PendingLabel *JumpLabels; /* jump to next part of the statement */
         PendingLabel *BreakLabels;
         PendingLabel *ContinueLabels;
 } Stmt;

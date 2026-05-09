@@ -99,9 +99,8 @@ statements:
 	| stmt statements {
 		$$ = create_stmt();
 		
-		$$->BreakLabels = merge_pending_labels($1->BreakLabels, $2->BreakLabels);
-        	$$->ContinueLabels = merge_pending_labels($1->ContinueLabels, $2->ContinueLabels);
-        	$$->JumpLabels = merge_pending_labels($1->JumpLabels, $2->JumpLabels);		
+		$$->BreakLabels = merge_jump_lists($1->BreakLabels, $2->BreakLabels);
+        	$$->ContinueLabels = merge_jump_lists($1->ContinueLabels, $2->ContinueLabels);
 
 		print_reduce("statements", "stmt statement");
 	} 
@@ -126,22 +125,18 @@ stmt:
 	}
 	| ifstmt {
                 $$ = $1;
-		reset_tmps();
                 print_reduce("stmt", "ifstmt"); 
 	}
 	| whilestmt {
                 $$ = $1;
-                reset_tmps();
                 print_reduce("stmt", "whilestmt"); 
 	}
 	| forstmt {
                 $$ = $1;
-                reset_tmps();
                 print_reduce("stmt", "forstmt"); 
 	}
 	| returnstmt {
 		$$ = create_stmt();
-                reset_tmps();
 		print_reduce("stmt", "returnstmt"); 
 	}
 	| BREAK SEMI_COLON {
@@ -158,7 +153,6 @@ stmt:
 			$$->BreakLabels = create_pending_label(quad);
 		}
 		
-                reset_tmps();
 		print_reduce("stmt", "BREAK SEMI_COLON");
 	}
 	| CONTINUE SEMI_COLON {
@@ -175,7 +169,6 @@ stmt:
                         $$->ContinueLabels = create_pending_label(quadID);
                 }
 		
-                reset_tmps();
 		print_reduce("stmt", "CONTINUE SEMI_COLON");
 	}
 	| block {
@@ -184,7 +177,6 @@ stmt:
 	}
 	| funcdef {
                 $$ = create_stmt();
-                reset_tmps();
                 print_reduce("stmt", "funcdef"); 
 	}
 	| SEMI_COLON {
@@ -201,35 +193,35 @@ expr:
 	| expr PLUS expr {
 		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
 		$$ = lvalue_expr(tmp, arithexpr);
-		new_quad(_add, $$, $1, $3, NO_LABEL);
+		new_quad(_add, $$, emit_bool_expr($1, sym_table, current_scope, t.line), emit_bool_expr($3, sym_table, current_scope, t.line), NO_LABEL);
 
 		print_reduce("expr", "expr PLUS expr"); 
 	}
 	| expr MINUS expr {
 		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
-                new_quad(_sub, $$, $1, $3, NO_LABEL);
+                new_quad(_sub, $$, emit_bool_expr($1, sym_table, current_scope, t.line), emit_bool_expr($3, sym_table, current_scope, t.line), NO_LABEL);
 
 		print_reduce("expr", "expr MINUS expr"); 
 	}
         | expr MULTIPLY expr {
                 Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
-                new_quad(_mul, $$, $1, $3, NO_LABEL);
+                new_quad(_mul, $$, emit_bool_expr($1, sym_table, current_scope, t.line), emit_bool_expr($3, sym_table, current_scope, t.line), NO_LABEL);
 
                 print_reduce("expr", "expr MULTIPLY expr"); 
 	}
         | expr DIVISION expr {
                 Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
-                new_quad(_div, $$, $1, $3, NO_LABEL);
+                new_quad(_div, $$, emit_bool_expr($1, sym_table, current_scope, t.line), emit_bool_expr($3, sym_table, current_scope, t.line), NO_LABEL);
 
                 print_reduce("expr", "expr DIVISION expr");
 	}
         | expr MOD expr {
                 Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
-                new_quad(_mod, $$, $1, $3, NO_LABEL);
+                new_quad(_mod, $$, emit_bool_expr($1, sym_table, current_scope, t.line), emit_bool_expr($3, sym_table, current_scope, t.line), NO_LABEL);
 
                 print_reduce("expr", "expr MOD expr"); 
 	}
@@ -263,19 +255,33 @@ expr:
 
                 print_reduce("expr", "expr NOT_EQUAL expr"); 
 	}
-        | expr AND expr {
-		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
-                $$ = lvalue_expr(tmp, boolexpr);
-                new_quad(_and, $$, $1, $3, NO_LABEL);	
-	
+        | expr AND {
+		Expr *left = convert_expr_to_bool($1, sym_table, current_scope, t.line);
+		fill_pending_labels_of_list(left->PendingTrueJumps, get_quad_count());
+		$<exprNode>$ = left;
+	} expr {
+		Expr *left = $<exprNode>3;
+		Expr *right = convert_expr_to_bool($4, sym_table, current_scope, t.line);
+
+		$$ = create_expr(boolexpr);
+		$$->PendingTrueJumps = right->PendingTrueJumps;
+		$$->PendingFalseJumps = merge_jump_lists(left->PendingFalseJumps, right->PendingFalseJumps);
+
 		print_reduce("expr", "expr AND expr");
 	}
-        | expr OR expr {
-                Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
-                $$ = lvalue_expr(tmp, boolexpr);
-                new_quad(_or, $$, $1, $3, NO_LABEL);
+        | expr OR {
+		Expr *left = convert_expr_to_bool($1, sym_table, current_scope, t.line);
+		fill_pending_labels_of_list(left->PendingFalseJumps, get_quad_count());
+		$<exprNode>$ = left;
+	} expr {
+		Expr *left = $<exprNode>3;
+		Expr *right = convert_expr_to_bool($4, sym_table, current_scope, t.line);
 
-                print_reduce("expr", "expr OR expr"); 
+		$$ = create_expr(boolexpr);
+		$$->PendingTrueJumps = merge_jump_lists(left->PendingTrueJumps, right->PendingTrueJumps);
+		$$->PendingFalseJumps = right->PendingFalseJumps;
+
+		print_reduce("expr", "expr OR expr"); 
 	}
 	| term { 
 		$$ = $1;
@@ -291,12 +297,14 @@ term:
 	| MINUS expr %prec UMINUS { 
 		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
                 $$ = lvalue_expr(tmp, arithexpr);
-                new_quad(_uminus, $$, $2, NULL, NO_LABEL);
+                new_quad(_uminus, $$, emit_bool_expr($2, sym_table, current_scope, t.line), NULL, NO_LABEL);
 
 		print_reduce("term", "MINUS expr");
 	}
 	| NOT expr {
-		$$ = $2;
+		$$ = convert_expr_to_bool($2, sym_table, current_scope, t.line);
+		swap_true_false_lists($$);
+
 		print_reduce("term", "NOT expr");
 	}
 	| PLUS_PLUS lvalue {
@@ -327,6 +335,10 @@ term:
 
 assignexpr:
 	lvalue ASSIGN expr { 
+		Symbol *tmp = new_tmp(sym_table, current_scope, t.line);
+		Expr *result = lvalue_expr(tmp, assignexpr);
+		Expr *value = emit_bool_expr($3, sym_table, current_scope, t.line);
+
 		if(current_lvalue != NULL){
 			if(strcmp(current_lvalue->type, "function") == 0) {
                         	char error_message[200];
@@ -335,12 +347,17 @@ assignexpr:
 			}
 		}
 
-		if($1->type != tableitem)
-			new_quad(_assign, $1, $3, NULL, NO_LABEL);	
-		else
-			new_quad(tablesetelem, lvalue_expr($1->sym, var), $1->table_index, $3, NO_LABEL);
+		if($1->type != tableitem){
+			new_quad(_assign, $1, value, NULL, NO_LABEL);
+			new_quad(_assign, result, $1, NULL, NO_LABEL);
+		}
+		else{
+			Expr *table = lvalue_expr($1->sym, var);
+			new_quad(tablesetelem, table, $1->table_index, value, NO_LABEL);
+			new_quad(tablegetelem, result, table, $1->table_index, NO_LABEL);
+		}
 
-		$$ = $1;
+		$$ = result;
 
 		print_reduce("assignexpr", "lvalue ASSIGN expr"); 
 	}
@@ -348,7 +365,7 @@ assignexpr:
 
 primary:
        	lvalue { 
-		$$ = get_table_item($1, sym_table, current_scope, t.line);
+		$$ = emit_table_item($1, sym_table, current_scope, t.line);
 		print_reduce("primary", "lvalue");
 	}
 	| call {
@@ -456,13 +473,13 @@ lvalue:
 
 member:
 	lvalue DOT ID {
-		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
+		Expr *expr = emit_table_item($1, sym_table, current_scope, t.line);
 		$$ = create_member(expr, $3, NULL);		
 
 		print_reduce("member", "lvalue DOT ID"); 
 	}
 	| lvalue LEFT_BRACKET expr RIGHT_BRACKET {
-		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
+		Expr *expr = emit_table_item($1, sym_table, current_scope, t.line);
 
 		$$ = create_expr(tableitem);
 		$$ = create_member(expr, NULL, $3);
@@ -470,13 +487,13 @@ member:
 		print_reduce("member", "lvalue LEFT_BRACKET expr RIGHT_BRACKET");
 	}
 	| call DOT ID {
-		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
+		Expr *expr = emit_table_item($1, sym_table, current_scope, t.line);
 		$$ = create_member(expr, $3, NULL);
 
 		print_reduce("member", "call DOT ID");
 	}
         | call LEFT_BRACKET expr RIGHT_BRACKET { 
-		Expr *expr = get_table_item($1, sym_table, current_scope, t.line);
+		Expr *expr = emit_table_item($1, sym_table, current_scope, t.line);
 
                 $$ = create_expr(tableitem);
                 $$ = create_member(expr, NULL, $3);
@@ -573,13 +590,13 @@ objectdef:
 	}
 	| LEFT_BRACKET indexed RIGHT_BRACKET {
                 $$ = create_table(sym_table, current_scope, t.line);
-                add_indexed_to_table($2, $$);
+                add_indexed_to_table($2, $$, sym_table, current_scope, t.line);
 
                 print_reduce("objectdef", "LEFT_BRACKET indexed RIGHT_BRACKET");
         }
 	| LEFT_BRACKET nonempty_elist RIGHT_BRACKET { 
 		$$ = create_table(sym_table, current_scope, t.line);
-		add_elist_to_table($2, $$);			
+		add_elist_to_table($2, $$, sym_table, current_scope, t.line);			
 
 		print_reduce("objectdef", "LEFT_BRACKET elist RIGHT_BRACKET"); 
 	}
@@ -602,7 +619,7 @@ indexed:
 
 indexedelem:
 	LEFT_BRACE expr COLON expr RIGHT_BRACE { 
-		$$ = create_indexed($2, $4);		
+		$$ = create_indexed(emit_bool_expr($2, sym_table, current_scope, t.line), emit_bool_expr($4, sym_table, current_scope, t.line));		
 
 		print_reduce("indexedelem", "LEFT_BRACE expr COLON expr RIGHT_BRACE"); 
 	}
@@ -654,6 +671,8 @@ funcstart:
                 }
 
                 current_scope++;
+		enter_scope_space();
+		reset_formal_arg_offset();
 
 		print_reduce("funcstart", "FUNCTION ID");
         }
@@ -676,6 +695,8 @@ funcstart:
                 }
 
                 current_scope++;
+		enter_scope_space();
+		reset_formal_arg_offset();
 
 		print_reduce("funcstart", "FUNCTION");
         }
@@ -683,6 +704,11 @@ funcstart:
 
 funcdef:
 	funcstart LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
+	{
+		exit_scope_space();
+		enter_scope_space();
+		reset_function_local_offset();
+	}
 	LEFT_BRACE statements RIGHT_BRACE {
 		SymTable_hide_scope(sym_table, current_scope);
 
@@ -694,6 +720,7 @@ funcdef:
 			function_started = 0;
 		}
 
+		exit_scope_space();
 		current_scope--;
 
 		print_reduce("funcdef", "funcstart LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block");
@@ -777,9 +804,10 @@ idlist:
 
 ifcond:
         IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+		Expr *cond = emit_bool_expr($3, sym_table, current_scope, t.line);
 		$$ = get_quad_count();
 
-		new_quad(if_eq, NULL, $3, bool_const_expr(True), NO_LABEL);
+		new_quad(if_eq, NULL, cond, bool_const_expr(True), NO_LABEL);
 		new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
 	}
 ;
@@ -812,9 +840,8 @@ ifstmt:
 		fill_pending_label(else_jump_quadID, after_else_label);
 
 		$$ = create_stmt();
-		$$->BreakLabels = merge_pending_labels($2->BreakLabels, $4->BreakLabels);
-		$$->ContinueLabels = merge_pending_labels($2->ContinueLabels, $4->ContinueLabels);
-		$$->JumpLabels = merge_pending_labels($2->JumpLabels, $4->JumpLabels);
+		$$->BreakLabels = merge_jump_lists($2->BreakLabels, $4->BreakLabels);
+		$$->ContinueLabels = merge_jump_lists($2->ContinueLabels, $4->ContinueLabels);
 
 		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt ELSE stmt"); 
 	}
@@ -836,10 +863,11 @@ whilestart:
 
 whilecond:
 	whilestart LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+		Expr *cond = emit_bool_expr($3, sym_table, current_scope, t.line);
 		$$.cond_quadID = $1;
 		$$.if_true_quadID = get_quad_count();
 
-		new_quad(if_eq, NULL, $3, bool_const_expr(True), NO_LABEL);
+		new_quad(if_eq, NULL, cond, bool_const_expr(True), NO_LABEL);
                 new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
 	}
 ;
@@ -879,10 +907,11 @@ forstart:
 
 forcond:
 	forstart LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON {
+		Expr *cond = emit_bool_expr($5, sym_table, current_scope, t.line);
 		$$.cond_quadID = $1 + 1;
 		$$.if_true_quadID = get_quad_count();
 
-		new_quad(if_eq, NULL, $5, bool_const_expr(True), NO_LABEL);
+		new_quad(if_eq, NULL, cond, bool_const_expr(True), NO_LABEL);
                 new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
 	}
 ;
@@ -946,7 +975,7 @@ returnstmt:
 			add_new_error(error_message);
 		}
 		else
-			new_quad(_return, $2, NULL, NULL, NO_LABEL);
+			new_quad(_return, emit_bool_expr($2, sym_table, current_scope, t.line), NULL, NULL, NO_LABEL);
 
 		print_reduce("returnstmt", "RETURN returnvalue SEMI_COLON");
 	}
@@ -1002,11 +1031,14 @@ int main(int argc, char **argv) {
 	
 	SymTable_print(sym_table);
 
-	printf("\n");
-	print_quads(stdout);
-
+	FILE *quad_file = fopen("quads.txt", "w");
+	assert(quad_file);
+	
+	print_quads(quad_file);
+	
 	SymTable_free(sym_table);
 	free_errors();
+	fclose(quad_file);
 	free_quads();
 
 	fclose(yyin);
@@ -1017,4 +1049,3 @@ int main(int argc, char **argv) {
 void yyerror(const char *s) {
 	fprintf(stderr, "Parse error: %s\n", s);
 }
-

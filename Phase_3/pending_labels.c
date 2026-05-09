@@ -24,7 +24,7 @@ void fill_pending_labels_of_list(PendingLabel *list, int label){
     	}
 }
 
-PendingLabel* merge_pending_labels(PendingLabel *l1, PendingLabel *l2){
+PendingLabel* merge_jump_lists(PendingLabel *l1, PendingLabel *l2){
 
 	PendingLabel *tmp;
 

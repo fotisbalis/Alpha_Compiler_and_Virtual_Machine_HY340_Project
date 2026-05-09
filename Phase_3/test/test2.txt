@@ -1,8 +1,3 @@
-x = 5;
+tbl = [];
+tbl["z"] = 3;
 
-function (){}
-
-function (a, b, cos, a) {
-	x = 5;
-	a = b;
-}

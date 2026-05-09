@@ -42,46 +42,77 @@ Symbol* new_tmp(SymTable_T oSymTable, int scope, int line){
 }
 
 void reset_tmps(){
-	
+
 	tmp_counter = 0;
+}
+
+Expr* emit_bool_expr(Expr *expr, SymTable_T sym_table, int current_scope, int line){
+
+	Symbol *tmp;
+	Expr *result;
+	int true_assign_quad;
+	int jump_quad;
+	int false_assign_quad;
+
+	if(expr == NULL)
+		return NULL;
+
+	if(expr->PendingTrueJumps == NULL && expr->PendingFalseJumps == NULL)
+		return expr;
+
+	tmp = new_tmp(sym_table, current_scope, line);
+	result = lvalue_expr(tmp, boolexpr);
+
+	true_assign_quad = get_quad_count();
+	new_quad(_assign, result, bool_const_expr(True), NULL, NO_LABEL);
+
+	jump_quad = get_quad_count();
+	new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+
+	false_assign_quad = get_quad_count();
+	new_quad(_assign, result, bool_const_expr(False), NULL, NO_LABEL);
+
+	fill_pending_labels_of_list(expr->PendingTrueJumps, true_assign_quad);
+	fill_pending_labels_of_list(expr->PendingFalseJumps, false_assign_quad);
+	fill_pending_label(jump_quad, get_quad_count());
+
+	result->PendingTrueJumps = NULL;
+	result->PendingFalseJumps = NULL;
+
+	return result;
 }
 
 Expr* handle_comparison_quad(opcode op, Expr *arg1, Expr *arg2, SymTable_T sym_table, int current_scope, int line){
 
-	Symbol *tmp = new_tmp(sym_table, current_scope, line);
-	Expr *expr = lvalue_expr(tmp, boolexpr);
+	Expr *expr = create_expr(boolexpr);
 
 	int if_quadID = get_quad_count();
 	new_quad(op, NULL, arg1, arg2, NO_LABEL);
-	
-	new_quad(_assign, expr, NULL, bool_const_expr(False), NO_LABEL);
 
 	int jump_quadID = get_quad_count();
 	new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
 
-	fill_pending_label(if_quadID, get_quad_count());
-	new_quad(_assign, expr, NULL, bool_const_expr(True), NO_LABEL);
-
-	fill_pending_label(jump_quadID, get_quad_count());
+	expr->PendingTrueJumps = create_pending_label(if_quadID);
+	expr->PendingFalseJumps = create_pending_label(jump_quadID);
 
 	return expr;
 }
 
-void print_quads_reverse(Expr *expr){
+static void print_quads_reverse(Expr *expr, SymTable_T sym_table, int current_scope, int line){
 
         if(expr == NULL)
                 return;
 
-        print_quads_reverse(expr->next);
-        new_quad(_param, NULL, expr, NULL, NO_LABEL);
+        print_quads_reverse(expr->next, sym_table, current_scope, line);
+        new_quad(_param, NULL, emit_bool_expr(expr, sym_table, current_scope, line), NULL, NO_LABEL);
 }
 
-void handle_param_quads(ExprList *params){
+void handle_param_quads(ExprList *params, SymTable_T sym_table, int current_scope, int line){
 
 	if(params == NULL)
 		return;
 
-	print_quads_reverse(params->head);
+	print_quads_reverse(params->head, sym_table, current_scope, line);
 }
 
 Expr* make_call(Expr *func, ExprList *params, SymTable_T sym_table, int current_scope, int line){
@@ -89,9 +120,9 @@ Expr* make_call(Expr *func, ExprList *params, SymTable_T sym_table, int current_
 	Symbol *tmp;
 	Expr *res;
 
-	handle_param_quads(params);
+	handle_param_quads(params, sym_table, current_scope, line);
 
-	new_quad(_call, NULL, func, NULL, NO_LABEL);
+	new_quad(_call, NULL, emit_bool_expr(func, sym_table, current_scope, line), NULL, NO_LABEL);
 
 	tmp = new_tmp(sym_table, current_scope, line);
 	res = lvalue_expr(tmp, var);
@@ -113,7 +144,7 @@ Expr* create_member(Expr *table, char *name, Expr *index){
 	return item;
 }
 
-Expr* get_table_item(Expr *item, SymTable_T sym_table, int current_scope, int line){
+Expr* emit_table_item(Expr *item, SymTable_T sym_table, int current_scope, int line){
 
 	if(item->type != tableitem)
 		return item;
@@ -137,21 +168,21 @@ Expr* create_table(SymTable_T sym_table, int current_scope, int line){
 	return table;
 }
 
-void add_elist_to_table(ExprList *elist, Expr *table){
+void add_elist_to_table(ExprList *elist, Expr *table, SymTable_T sym_table, int current_scope, int line){
 
 	Expr *expr;
 	int index = 0;
 
 	for(expr = elist->head; expr != NULL; expr = expr->next)
-		new_quad(tablesetelem, table, num_const_expr(index++), expr, NO_LABEL);
+		new_quad(tablesetelem, table, num_const_expr(index++), emit_bool_expr(expr, sym_table, current_scope, line), NO_LABEL);
 }
 
-void add_indexed_to_table(IndexedList *list, Expr *table){
+void add_indexed_to_table(IndexedList *list, Expr *table, SymTable_T sym_table, int current_scope, int line){
 
         Indexed *ind;
 
         for(ind = list->head; ind != NULL; ind = ind->next)
-                new_quad(tablesetelem, table, ind->index, ind->val, NO_LABEL);
+                new_quad(tablesetelem, table, emit_bool_expr(ind->index, sym_table, current_scope, line), emit_bool_expr(ind->val, sym_table, current_scope, line), NO_LABEL);
 }
 
 Expr* handle_pre_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int current_scope, int line){
@@ -169,11 +200,12 @@ Expr* handle_pre_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int curr
 		Expr *table = lvalue_expr(lvalue->sym, var);
 		Symbol *tmp2 = new_tmp(sym_table, current_scope, line);		
 
-		Expr *old_value = get_table_item(lvalue, sym_table, current_scope, line);
+		Expr *old_value = emit_table_item(lvalue, sym_table, current_scope, line);
 		Expr *new_value = lvalue_expr(tmp2, arithexpr);		
 
 		new_quad(op, new_value, old_value, num_const_expr(1), NO_LABEL);
 		new_quad(tablesetelem, table, lvalue->table_index, new_value, NO_LABEL);
+		new_quad(_assign, result, new_value, NULL, NO_LABEL);
 	}
 
 	return result;
@@ -194,7 +226,7 @@ Expr* handle_post_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int cur
 		Expr *table = lvalue_expr(lvalue->sym, var);
                 Symbol *tmp2 = new_tmp(sym_table, current_scope, line);
 
-		Expr *old_value = get_table_item(lvalue, sym_table, current_scope, line);
+		Expr *old_value = emit_table_item(lvalue, sym_table, current_scope, line);
                 Expr *new_value = lvalue_expr(tmp2, arithexpr);
 
 		new_quad(_assign, result, old_value, NULL, NO_LABEL);
@@ -205,3 +237,23 @@ Expr* handle_post_inc_dec(Expr *lvalue, opcode op, SymTable_T sym_table, int cur
 	return result;
 }
 
+Expr* convert_expr_to_bool(Expr *expr, SymTable_T sym_table, int current_scope, int line){
+
+	assert(expr != NULL);
+
+	if(expr->PendingTrueJumps != NULL || expr->PendingFalseJumps != NULL)
+		return expr;
+
+	expr->type = boolexpr;
+
+	int if_quadID = get_quad_count();
+	new_quad(if_eq, NULL, expr, bool_const_expr(True), NO_LABEL);
+
+	int jump_quadID = get_quad_count();
+	new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+
+	expr->PendingTrueJumps = create_pending_label(if_quadID);
+	expr->PendingFalseJumps = create_pending_label(jump_quadID);
+
+	return expr;
+}

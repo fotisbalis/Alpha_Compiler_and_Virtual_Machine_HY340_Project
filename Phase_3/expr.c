@@ -14,8 +14,8 @@ Expr* create_expr(expr_type type){
 	expr->num_const = 0;
 	expr->str_const = NULL;
 	expr->bool_const = 0;
-	expr->TrueList = NULL;
-	expr->FalseList = NULL;
+	expr->PendingTrueJumps = NULL;
+	expr->PendingFalseJumps = NULL;
 	expr->next = NULL;
 	
 	return expr;
@@ -143,4 +143,15 @@ char* expr_to_string(Expr *expr){
 		default:
 			return "";	
 	}
+}
+
+void swap_true_false_lists(Expr *expr){
+
+        PendingLabel *tmp;
+
+        assert(expr != NULL);
+
+	tmp = expr->PendingTrueJumps;
+	expr->PendingTrueJumps = expr->PendingFalseJumps;
+	expr->PendingFalseJumps = tmp;
 }

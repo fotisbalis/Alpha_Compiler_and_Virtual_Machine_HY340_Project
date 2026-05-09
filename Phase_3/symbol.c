@@ -71,6 +71,16 @@ void exit_scope_space(){
 	scope_space_counter--;
 }
 
+void reset_formal_arg_offset(){
+
+	formal_arg_offset = 0;
+}
+
+void reset_function_local_offset(){
+
+	function_local_offset = 0;
+}
+
 Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive, int isTemp){
         
 	Symbol* sym = malloc(sizeof(Symbol));
@@ -88,6 +98,7 @@ Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive,
 	assert(isTemp == True || isTemp == False);
         sym->isTemp = isTemp;
 
+	sym->space = current_scope_space();
 	sym->offset = current_scope_offset();
 
 	inc_current_scope_offset();

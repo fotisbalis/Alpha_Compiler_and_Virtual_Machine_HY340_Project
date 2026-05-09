@@ -26,8 +26,8 @@ typedef struct Expr {
 	double num_const;
 	char *str_const;
 	int bool_const;
-	PendingLabel *TrueList;
-	PendingLabel *FalseList;
+	PendingLabel *PendingTrueJumps;
+	PendingLabel *PendingFalseJumps;
 	struct Expr *next;	
 } Expr;
 
@@ -53,5 +53,7 @@ ExprList* create_expr_list();
 void add_expr(ExprList *list, Expr *expr);
 
 char* expr_to_string(Expr *expr);
+
+void swap_true_false_lists(Expr *expr);
 
 #endif

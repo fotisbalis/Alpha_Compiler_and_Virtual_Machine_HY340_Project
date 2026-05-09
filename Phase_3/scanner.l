@@ -31,7 +31,7 @@ void assign_token(Token* t, char *type, char *content, char *name){
 
 %option noyywrap
 %option yylineno
-%x STRING
+%x STR
 %x COMMENT
 
 %%
@@ -101,7 +101,7 @@ void assign_token(Token* t, char *type, char *content, char *name){
 }
 
 \" {	/* STRINGS */
-	BEGIN(STRING);
+	BEGIN(STR);
 
 	/* Initialize the string */
 	Token* t = (Token*) token;
@@ -112,13 +112,13 @@ void assign_token(Token* t, char *type, char *content, char *name){
 	str[0]='\0';
 }
 
-<STRING>\\n { strcat(str, "\n"); /* if '\\n' */}
-<STRING>\\t { strcat(str, "\t"); /* if '\\t' */}
-<STRING>\\\\ { strcat(str, "\\"); /* if '\\' */}
-<STRING>\\\" { strcat(str, "\""); /* if '\"' */}
-<STRING>[^\\"]+ { strcat(str, yytext); /* everything else except '"' */ }
+<STR>\\n { strcat(str, "\n"); /* if '\\n' */}
+<STR>\\t { strcat(str, "\t"); /* if '\\t' */}
+<STR>\\\\ { strcat(str, "\\"); /* if '\\' */}
+<STR>\\\" { strcat(str, "\""); /* if '\"' */}
+<STR>[^\\"]+ { strcat(str, yytext); /* everything else except '"' */ }
 
-<STRING>\" {
+<STR>\" {
 	/* Normal end of string */	
 	Token* t = (Token*) token;
 	t->content = strdup(str);
@@ -131,7 +131,7 @@ void assign_token(Token* t, char *type, char *content, char *name){
         return STRING;
 }
 
-<STRING><<EOF>> {
+<STR><<EOF>> {
 	/* End of string with EOF, return ERROR */
 	printf("Error: String ends with EOF at line %d\n", yylineno);
 	BEGIN(INITIAL);
@@ -388,4 +388,3 @@ void assign_token(Token* t, char *type, char *content, char *name){
 }
 
 %%
-
