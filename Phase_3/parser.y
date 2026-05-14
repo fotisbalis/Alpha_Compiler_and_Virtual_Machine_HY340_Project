@@ -79,7 +79,7 @@ void yyerror(const char *s);
 %type <exprNode> expr term primary lvalue const assignexpr member call funcstart funcdef returnvalue objectdef
 %type <exprList> elist callsuffix normcall nonempty_elist
 %type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt
-%type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart
+%type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart jump_func
 %type <whileQuads> whilecond
 %type <forQuads> forcond
 %type <indexedNode> indexedelem
@@ -702,7 +702,16 @@ funcstart:
         }
 ;
 
+jump_func:
+	 {
+		$$ = get_quad_count();
+	}
+;
+
 funcdef:
+	jump_func {
+		new_quad(_jump, NULL, NULL, NULL, NO_LABEL); /* jump to end of function */
+	}
 	funcstart LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS 
 	{
 		exit_scope_space();
@@ -713,8 +722,10 @@ funcdef:
 		SymTable_hide_scope(sym_table, current_scope);
 
 		if(function_started == 1){
-			new_quad(funcend, $1, NULL, NULL, NO_LABEL);
-			$$ = $1;			
+			new_quad(funcend, $3, NULL, NULL, NO_LABEL);
+			$$ = $3;			
+
+			fill_pending_label($1, get_quad_count());		
 
 			function_depth--;
 			function_started = 0;
@@ -1035,7 +1046,8 @@ int main(int argc, char **argv) {
 	assert(quad_file);
 	
 	print_quads(quad_file);
-	
+	print_quads(stdout);	
+
 	SymTable_free(sym_table);
 	free_errors();
 	fclose(quad_file);
