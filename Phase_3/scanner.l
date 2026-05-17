@@ -9,6 +9,7 @@
 #include "indexed.h"
 #include "loop_info.h"
 #include "stmt.h"
+#include "callsuffix.h"
 #include "parser.tab.h"
 
 #define YY_DECL int alpha_yylex(Token *token)

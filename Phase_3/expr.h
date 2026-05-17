@@ -48,6 +48,8 @@ Expr* bool_const_expr(int boolean);
 
 Expr* nil_expr();
 
+Expr* error_expr(expr_type type);
+
 ExprList* create_expr_list();
 
 void add_expr(ExprList *list, Expr *expr);

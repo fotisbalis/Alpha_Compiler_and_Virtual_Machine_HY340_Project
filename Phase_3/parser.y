@@ -15,6 +15,7 @@
 #include "quad.h"
 #include "loop_info.h"
 #include "stmt.h"
+#include "callsuffix.h"
 
 #define NO_LABEL -1
 #define True 1
@@ -42,6 +43,7 @@ void yyerror(const char *s);
 	double realVal;
 	Expr* exprNode;
 	ExprList* exprList;
+	CallSuffix* callSuffix;
 	Stmt* stmtNode;
 	PendingLabel* pendingLabels;
 	int quadID;
@@ -77,9 +79,10 @@ void yyerror(const char *s);
 %nonassoc IFX
 
 %type <exprNode> expr term primary lvalue const assignexpr member call funcstart funcdef returnvalue objectdef
-%type <exprList> elist callsuffix normcall nonempty_elist
+%type <exprList> elist nonempty_elist
+%type <callSuffix> callsuffix normcall methodcall
 %type <stmtNode> stmt statements block ifstmt whilestmt forstmt returnstmt
-%type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart jump_func
+%type <quadID> ifcond elsestart whilestart forstart forstep forstepstart forbodystart jump_func forcheck
 %type <whileQuads> whilecond
 %type <forQuads> forcond
 %type <indexedNode> indexedelem
@@ -347,17 +350,20 @@ assignexpr:
 			}
 		}
 
-		if($1->type != tableitem){
+		if($1 == NULL || ($1->type != tableitem && $1->sym == NULL)){
+			$$ = error_expr(assignexpr);
+		}
+		else if($1->type != tableitem){
 			new_quad(_assign, $1, value, NULL, NO_LABEL);
 			new_quad(_assign, result, $1, NULL, NO_LABEL);
+			$$ = result;
 		}
 		else{
 			Expr *table = lvalue_expr($1->sym, var);
 			new_quad(tablesetelem, table, $1->table_index, value, NO_LABEL);
 			new_quad(tablegetelem, result, table, $1->table_index, NO_LABEL);
+			$$ = result;
 		}
-
-		$$ = result;
 
 		print_reduce("assignexpr", "lvalue ASSIGN expr"); 
 	}
@@ -438,6 +444,7 @@ lvalue:
 			char error_message[200];
                         sprintf(error_message, "ERROR: use of library function \"%s\" as local at line %d", lib->name, t.line);
                 	add_new_error(error_message);
+			$$ = error_expr(var);
 		}
 				
 		else if(s == NULL || s->isActive == 0){
@@ -445,11 +452,14 @@ lvalue:
 				s = Symbol_create($2, "global variable", current_scope, t.line, 1, 0);
 			else 
 				s = Symbol_create($2, "local variable", current_scope, t.line, 1, 0);
-                        
+                         
 			SymTable_put(sym_table, s);
-                }
+			$$ = lvalue_expr(s, var);
+                 }
 
-		$$ = lvalue_expr(s, var);
+		else
+			$$ = lvalue_expr(s, var);
+	
 		print_reduce("lvalue", "LOCAL ID");
         } 
 	| DOUBLE_COLON ID { /* lookup in scope 0 */
@@ -459,9 +469,11 @@ lvalue:
 			char error_message[200];
 			sprintf(error_message, "ERROR: undefined global variable %s at line %d", $2, t.line);
 			add_new_error(error_message);
+			$$ = error_expr(var);
 		}
-	
-		$$ = lvalue_expr(s, var);
+		else
+			$$ = lvalue_expr(s, var);
+
 		print_reduce("lvalue", "DOUBLE_COLON ID");
 	}
 	| member { 
@@ -509,6 +521,9 @@ call:
 	print_reduce("call", "call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); 
     }
     | lvalue callsuffix { /* check if symbol used as function is in the symbol table and if it is a function */
+	Expr *func = $1;
+	ExprList *params = $2->params;
+
 	if(current_lvalue != NULL){
 		Symbol* s = SymTable_lookup(sym_table, current_lvalue->name, current_scope, function_depth, function_scopes);
 
@@ -527,11 +542,28 @@ call:
 		current_lvalue = NULL;
 	}
 
-	$$ = make_call($1, $2, sym_table, current_scope, t.line);
+	if($2->is_method){
+		Expr *self = emit_table_item($1, sym_table, current_scope, t.line);
+		ExprList *method_params = create_expr_list();
+
+		add_expr(method_params, self);
+
+		if(params != NULL && params->head != NULL){
+			method_params->tail->next = params->head;
+			method_params->tail = params->tail;
+		}
+
+		func = create_member(self, $2->method_name, NULL);
+		params = method_params;
+	}
+
+	$$ = make_call(func, params, sym_table, current_scope, t.line);
 
 	print_reduce("call", "lvalue callsuffix");
     }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+	$$ = make_call($2, $5, sym_table, current_scope, t.line);
+
 	print_reduce("call", "LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS");
     }
 ;
@@ -542,19 +574,33 @@ callsuffix:
 
 		print_reduce("callsuffix", "normcall"); 
 	}
-	| methodcall { print_reduce("callsuffix", "methodcall"); }
+	| methodcall {
+		$$ = $1;
+
+		print_reduce("callsuffix", "methodcall"); 
+	}
 ;
 
 normcall:
 	LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { 
-		$$ = $2;
+		$$ = malloc(sizeof(CallSuffix));
+		$$->params = $2;
+		$$->is_method = 0;
+		$$->method_name = NULL;
 
 		print_reduce("normcall", "LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); 
 	}
 ;
 
 methodcall:
-	  DOUBLE_DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { print_reduce("methodcall", "DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS"); }
+	  DOUBLE_DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+		$$ = malloc(sizeof(CallSuffix));
+		$$->params = $4;
+		$$->is_method = 1;
+		$$->method_name = strdup($2);
+
+		print_reduce("methodcall", "DOT ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS");
+	  }
 ;
 
 elist:
@@ -678,7 +724,7 @@ funcstart:
         }
 	| FUNCTION {
                 char anonymous_name[32];
-                sprintf(anonymous_name, "anonymous_func_%d", anonymous_function_counter++);
+                sprintf(anonymous_name, "anon_%d", anonymous_function_counter++);
 
                 Symbol* s = SymTable_lookup_scope(sym_table, anonymous_name, current_scope);
 
@@ -916,10 +962,16 @@ forstart:
         }
 ;
 
+forcheck:
+	{
+		$$ = get_quad_count();
+	}
+;
+
 forcond:
-	forstart LEFT_PARENTHESIS elist SEMI_COLON expr SEMI_COLON {
-		Expr *cond = emit_bool_expr($5, sym_table, current_scope, t.line);
-		$$.cond_quadID = $1 + 1;
+	forstart LEFT_PARENTHESIS elist SEMI_COLON forcheck expr SEMI_COLON {
+		Expr *cond = emit_bool_expr($6, sym_table, current_scope, t.line);
+		$$.cond_quadID = $5;
 		$$.if_true_quadID = get_quad_count();
 
 		new_quad(if_eq, NULL, cond, bool_const_expr(True), NO_LABEL);
@@ -1032,6 +1084,8 @@ int main(int argc, char **argv) {
 
 	if(yyparse() != 0) {
         	SymTable_free(sym_table);
+		free_errors();
+		free_quads();
         	return 1;
     	}	
 
@@ -1043,16 +1097,15 @@ int main(int argc, char **argv) {
 	SymTable_print(sym_table);
 
 	FILE *quad_file = fopen("quads.txt", "w");
-	assert(quad_file);
-	
+        assert(quad_file);
+
 	print_quads(quad_file);
-	print_quads(stdout);	
 
 	SymTable_free(sym_table);
 	free_errors();
-	fclose(quad_file);
 	free_quads();
 
+	fclose(quad_file);
 	fclose(yyin);
 
 	return 0;

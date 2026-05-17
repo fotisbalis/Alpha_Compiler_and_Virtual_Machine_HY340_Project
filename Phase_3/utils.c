@@ -119,10 +119,12 @@ Expr* make_call(Expr *func, ExprList *params, SymTable_T sym_table, int current_
 
 	Symbol *tmp;
 	Expr *res;
+	Expr *callable;
 
 	handle_param_quads(params, sym_table, current_scope, line);
 
-	new_quad(_call, NULL, emit_bool_expr(func, sym_table, current_scope, line), NULL, NO_LABEL);
+	callable = emit_table_item(func, sym_table, current_scope, line);
+	new_quad(_call, NULL, emit_bool_expr(callable, sym_table, current_scope, line), NULL, NO_LABEL);
 
 	tmp = new_tmp(sym_table, current_scope, line);
 	res = lvalue_expr(tmp, var);

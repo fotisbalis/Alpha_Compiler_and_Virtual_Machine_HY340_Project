@@ -64,6 +64,11 @@ Expr* nil_expr(){
         return expr;
 }
 
+Expr* error_expr(expr_type type){
+
+	return create_expr(type);
+}
+
 ExprList* create_expr_list(){
 	
 	ExprList *list = malloc(sizeof(ExprList));
