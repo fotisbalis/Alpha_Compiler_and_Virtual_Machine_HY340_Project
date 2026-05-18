@@ -42,6 +42,8 @@ int error_count(){
 
 void print_errors(){
 
+	if(!has_errors()) return;
+
 	Error* err;
 
 	printf("\n--------- Errors ---------\n");
