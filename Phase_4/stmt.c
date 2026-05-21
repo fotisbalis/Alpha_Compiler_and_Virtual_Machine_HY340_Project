@@ -9,6 +9,7 @@ Stmt* create_stmt(void){
 
 	stmt->BreakLabels = NULL;
     	stmt->ContinueLabels = NULL;
+	stmt->ReturnLabels = NULL;
 	
 	return stmt;
 }

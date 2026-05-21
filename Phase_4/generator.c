@@ -31,6 +31,28 @@ void make_retval_operand(ioperand *operand) {
 	operand->val = 0;
 }
 
+void make_var_operand(Symbol *sym, ioperand *operand) {
+        assert(sym != NULL);
+        assert(operand != NULL);
+
+        switch(sym->space) {
+                case programvar:
+                        operand->type = global_o;
+                        break;
+                case functionlocal:
+                        operand->type = local_o;
+                        break;
+                case formalarg:
+                        operand->type = formal_o;
+                        break;
+                default:
+                        assert(0);
+        }
+
+        assert(sym->offset >= 0);
+        operand->val = sym->offset;
+}
+
 void make_operand(Expr *expr, ioperand *operand) {
 	
 	assert(operand != NULL);
@@ -41,31 +63,28 @@ void make_operand(Expr *expr, ioperand *operand) {
 	}
 
 	switch(expr->type) {
-		case var:	break;
-		case tableitem:	break;
-		case arithexpr:	break;
-		case boolexpr:	break;
-		case assignexpr: break;
-		case newtable:	break;
-			assert(expr->sym != NULL);
+		case var:
+                        make_var_operand(expr->sym, operand);
+                        break;
 
-			switch(expr->sym->space) {
-				case programvar:
-					operand->type = global_o;
-					break;
-				case functionlocal:
-					operand->type = local_o;
-					break;
-				case formalarg:
-					operand->type = formal_o;
-					break;
-				default:
-					assert(0);
-			}
+		case tableitem:
+                        make_var_operand(expr->sym, operand);
+                        break;
 
-			assert(expr->sym->offset >= 0);
-			
-			operand->val = expr->sym->offset;
+		case arithexpr:
+                        make_var_operand(expr->sym, operand);
+                        break;
+
+		case boolexpr:
+                        make_var_operand(expr->sym, operand);
+                        break;
+
+		case assignexpr:
+                        make_var_operand(expr->sym, operand);
+                        break;
+
+		case newtable:
+			make_var_operand(expr->sym, operand);
 			break;
 
 		case programfunc:
@@ -236,6 +255,17 @@ void generate_IF_LESSEQ(Quad *quad) {
 	generate_relational(jle_i, quad);
 }
 
+void generate_NOT(Quad *quad) {
+	assert(0);
+}
+
+void generate_OR(Quad *quad) {
+	assert(0);
+}
+
+void generate_AND(Quad *quad) {
+	assert(0);
+}
 
 void generate_PARAM(Quad *quad) {
 	

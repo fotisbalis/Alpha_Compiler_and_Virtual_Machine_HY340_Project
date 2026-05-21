@@ -10,6 +10,7 @@ void reset_operand(ioperand *operand);
 void make_operand(Expr *expr, ioperand *operand);
 void make_bool_operand(ioperand *operand, int value);
 void make_retval_operand(ioperand *operand);
+void make_var_operand(Symbol *sym, ioperand *operand);
 
 void generate(iopcode op, Quad *quad);
 
@@ -34,6 +35,10 @@ void generate_IF_GREATER(Quad *quad);
 void generate_IF_GREATEREQ(Quad *quad);
 void generate_IF_LESS(Quad *quad);
 void generate_IF_LESSEQ(Quad *quad);
+
+void generate_NOT(Quad *quad);
+void generate_OR(Quad *quad);
+void generate_AND(Quad *quad);
 
 void generate_PARAM(Quad *quad);
 void generate_CALL(Quad *quad);

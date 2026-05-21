@@ -104,6 +104,7 @@ statements:
 		
 		$$->BreakLabels = merge_jump_lists($1->BreakLabels, $2->BreakLabels);
         	$$->ContinueLabels = merge_jump_lists($1->ContinueLabels, $2->ContinueLabels);
+		$$->ReturnLabels = merge_jump_lists($1->ReturnLabels, $2->ReturnLabels);
 
 		print_reduce("statements", "stmt statement");
 	} 
@@ -139,7 +140,7 @@ stmt:
                 print_reduce("stmt", "forstmt"); 
 	}
 	| returnstmt {
-		$$ = create_stmt();
+		$$ = $1;
 		print_reduce("stmt", "returnstmt"); 
 	}
 	| BREAK SEMI_COLON {
@@ -768,6 +769,7 @@ funcdef:
 		SymTable_hide_scope(sym_table, current_scope);
 
 		if(function_started == 1){
+			fill_pending_labels_of_list($9->ReturnLabels, get_quad_count());
 			new_quad(funcend, $3, NULL, NULL, NO_LABEL);
 			$$ = $3;			
 
@@ -899,6 +901,7 @@ ifstmt:
 		$$ = create_stmt();
 		$$->BreakLabels = merge_jump_lists($2->BreakLabels, $4->BreakLabels);
 		$$->ContinueLabels = merge_jump_lists($2->ContinueLabels, $4->ContinueLabels);
+		$$->ReturnLabels = merge_jump_lists($2->ReturnLabels, $4->ReturnLabels);
 
 		print_reduce("ifstmt", "IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt ELSE stmt"); 
 	}
@@ -949,6 +952,7 @@ whilestmt:
 		new_quad(_jump, NULL, NULL, NULL, $1.cond_quadID);
 
 		$$ = create_stmt();
+		$$->ReturnLabels = $3->ReturnLabels;
 
 		loop_depth--;
 
@@ -1021,6 +1025,7 @@ forstmt:
                 new_quad(_jump, NULL, NULL, NULL, step_start);
 
                 $$ = create_stmt();
+		$$->ReturnLabels = $5->ReturnLabels;
 
 		loop_depth--; 
 
@@ -1037,8 +1042,14 @@ returnstmt:
 			sprintf(error_message ,"ERROR: return called outside of function at line %d", t.line); 
 			add_new_error(error_message);
 		}
-		else
+		else {
+			int return_jump_quadID;
+
 			new_quad(_return, emit_bool_expr($2, sym_table, current_scope, t.line), NULL, NULL, NO_LABEL);
+			return_jump_quadID = get_quad_count();
+			new_quad(_jump, NULL, NULL, NULL, NO_LABEL);
+			$$->ReturnLabels = create_pending_label(return_jump_quadID);
+		}
 
 		print_reduce("returnstmt", "RETURN returnvalue SEMI_COLON");
 	}

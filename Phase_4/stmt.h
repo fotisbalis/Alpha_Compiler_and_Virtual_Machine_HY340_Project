@@ -7,6 +7,7 @@
 typedef struct Stmt {
         PendingLabel *BreakLabels;
         PendingLabel *ContinueLabels;
+	PendingLabel *ReturnLabels;
 } Stmt;
 
 Stmt* create_stmt();
