@@ -22,7 +22,7 @@ Instruction* create_instruction(iopcode opcode, ioperand result, ioperand arg1, 
 	return instruction;
 }
 
-void add_instruction(Instruction instruction) {
+void new_instruction(Instruction instruction) {
 	
 	if(count >= capacity)
 		expand_instructions();
@@ -47,10 +47,6 @@ Instruction* get_instructions() {
 }
 
 int get_instruction_count() {
-	return count;
-}
-
-int nextinstructionlabel() {
 	return count;
 }
 

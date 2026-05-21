@@ -67,15 +67,13 @@ typedef struct UserFunc {
 
 Instruction* create_instruction(iopcode opcode, ioperand result, ioperand arg1, ioperand arg2, int src_line);
 
-void add_instruction(Instruction instruction);
+void new_instruction(Instruction instruction);
 
 void expand_instructions();
 
 Instruction* get_instructions();
 
 int get_instruction_count();
-
-int next_instruction_label();
 
 char* iopcode_to_string(iopcode opcode);
 
