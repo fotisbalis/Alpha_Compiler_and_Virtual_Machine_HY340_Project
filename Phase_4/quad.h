@@ -40,6 +40,7 @@ typedef struct Quad{
 	Expr *arg1;
 	Expr *arg2;
 	int label;
+	int taddress;
 } Quad;
 
 Quad* create_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label);

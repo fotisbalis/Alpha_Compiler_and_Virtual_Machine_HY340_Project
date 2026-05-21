@@ -6,6 +6,7 @@
 #include "quad.h"
 
 #define NO_LABEL -1
+#define NO_TADDRESS -1
 
 static int count = 0;
 static int capacity = 0;
@@ -20,6 +21,7 @@ Quad* create_quad(opcode op, Expr *res, Expr *arg1, Expr *arg2, int label){
 	quad->arg2 = arg2;
 	quad->res = res;
 	quad->label = label;
+	quad->taddress = NO_TADDRESS;
 
 	return quad;
 }
@@ -141,6 +143,5 @@ void free_quads(){
 	count = 0;
 	capacity = 0;
 }
-
 
 

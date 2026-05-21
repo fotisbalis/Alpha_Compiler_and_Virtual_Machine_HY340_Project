@@ -1,66 +1,86 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
 
-typedef enum vmopcode {
-	assign_v,
-	add_v,
-	sub_v,
-	mul_v,
-	div_v,
-	mod_v,
-	uminus_v,
-	and_v,
-	or_v,
-	not_v,
-	jeq_v,
-	jne_v,
-	jle_v,
-	jge_v,
-	jlt_v,
-	jgt_v,
-	jump_v,
-	call_v,
-	pusharg_v,
-	funcenter_v,
-	funcexit_v,
-	newtable_v,
-	tablegetelem_v,
-	tablesetelem_v,
-	nop_v
-} vmopcode;
+#include <stdio.h>
 
-typedef enum vmarg_type {
-	label_a,
-	global_a,
-	formal_a,
-	local_a,
-	number_a,
-	string_a,
-	bool_a,
-	nil_a,
-	userfunc_a,
-	libfunc_a,
-	retval_a,
-	unused_a
-} vmarg_type;
+typedef enum iopcode {
+	assign_i,
+	add_i,
+	sub_i,
+	mul_i,
+	div_i,
+	mod_i,
+	uminus_i,
+	and_i,
+	or_i,
+	not_i,
+	jeq_i,
+	jne_i,
+	jle_i,
+	jge_i,
+	jlt_i,
+	jgt_i,
+	jump_i,
+	call_i,
+	pusharg_i,
+	funcenter_i,
+	funcexit_i,
+	newtable_i,
+	tablegetelem_i,
+	tablesetelem_i,
+	nop_i
+} iopcode;
 
-typedef struct vmarg {
-	vmarg_type type;
+typedef enum ioperand_type {
+	label_o,
+	global_o,
+	formal_o,
+	local_o,
+	number_o,
+	string_o,
+	bool_o,
+	nil_o,
+	userfunc_o,
+	libfunc_o,
+	retval_o,
+	unused_o
+} ioperand_type;
+
+typedef struct ioperand {
+	ioperand_type type;
 	unsigned val;
-} vmarg;
+} ioperand;
 
 typedef struct Instruction {
-	vmopcode opcode;
-	vmarg result;
-	vmarg arg1;
-	vmarg arg2;
-	int line;
+	iopcode opcode;
+	ioperand result;
+	ioperand arg1;
+	ioperand arg2;
+	int src_line;
 } Instruction;
 
 typedef struct UserFunc {
 	unsigned address;
 	unsigned localSize;
-	char *id;
+	char *name;
 } UserFunc;
+
+Instruction* create_instruction(iopcode opcode, ioperand result, ioperand arg1, ioperand arg2, int src_line);
+
+void add_instruction(Instruction instruction);
+
+void expand_instructions();
+
+Instruction* get_instructions();
+
+int get_instruction_count();
+
+int next_instruction_label();
+
+char* iopcode_to_string(iopcode opcode);
+
+void print_instructions(FILE *f);
+
+void free_instructions();
 
 #endif
