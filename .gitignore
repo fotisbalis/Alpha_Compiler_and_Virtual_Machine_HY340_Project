@@ -4,6 +4,7 @@ scanner
 parser.tab.c
 parser.tab.h
 parser
+quads.txt
 *.o
 
 # Editor
