@@ -90,7 +90,7 @@ void make_operand(Expr *expr, ioperand *operand) {
 		case programfunc:
 			assert(expr->sym != NULL);
 			operand->type = userfunc_o;
-			operand->val = new_const_userfunc(expr->sym->offset, 0, expr->sym->name);
+			operand->val = new_const_userfunc(expr->sym->taddress, -1, expr->sym->name);
 			break;
 
 		case libraryfunc:
@@ -320,6 +320,11 @@ void generate_FUNCSTART(Quad *quad) {
 	Instruction instruction;
 
 	assert(quad != NULL);
+	assert(quad->res != NULL);
+	assert(quad->res->sym != NULL);
+
+	quad->res->sym->taddress = get_instruction_count();
+	update_const_userfunc(quad->res->sym->taddress, -1, quad->res->sym->name);
 
 	instruction.opcode = funcenter_i;
 	make_operand(quad->res, &instruction.result);
@@ -339,7 +344,7 @@ void generate_RETURN(Quad *quad) {
 
 	instruction.opcode = assign_i;
 	make_retval_operand(&instruction.result);
-	make_operand(quad->arg1, &instruction.arg1);
+	make_operand(quad->res, &instruction.arg1);
 	reset_operand(&instruction.arg2);
 	instruction.src_line = 0;
 

@@ -16,6 +16,7 @@ char **get_libfunc_consts();
 int get_libfunc_count();
 
 int new_const_userfunc(int address, int localSize, char *name);
+void update_const_userfunc(int address, int localSize, char *name);
 UserFunc *get_userfunc_consts();
 int get_userfunc_count();
 

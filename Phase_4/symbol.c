@@ -100,6 +100,7 @@ Symbol* Symbol_create(char* name, char* type, int scope, int line, int isActive,
 
 	sym->space = current_scope_space();
 	sym->offset = current_scope_offset();
+	sym->taddress = -1;
 
 	inc_current_scope_offset();
 

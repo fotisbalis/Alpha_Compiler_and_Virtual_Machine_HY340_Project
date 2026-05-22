@@ -3,4 +3,4 @@ function foo(a, b) {
 	return x;
 }
 
-x = 5;
+y = foo(2, 4);

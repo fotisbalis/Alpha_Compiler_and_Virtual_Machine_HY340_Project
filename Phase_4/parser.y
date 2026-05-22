@@ -16,6 +16,10 @@
 #include "loop_info.h"
 #include "stmt.h"
 #include "callsuffix.h"
+#include "instructions.h"
+#include "const_tables.h"
+#include "generator.h"
+#include "incomplete_jumps.h"
 
 #define NO_LABEL -1
 #define True 1
@@ -433,7 +437,16 @@ lvalue:
 			current_lvalue = s;
 		}
 
-		$$ = lvalue_expr(s, var);
+		
+		if(strcmp(s->type, "library function") == 0)
+			$$ = lvalue_expr(s, libraryfunc);
+		
+		else if(strcmp(s->type, "function") == 0)
+			$$ = lvalue_expr(s, programfunc);
+		
+		else
+			$$ = lvalue_expr(s, var);
+		
 		print_reduce("lvalue", "ID");
 	}
 	| LOCAL ID { /* if the symbol doesn't exist or is hidden in current scope and not library function name, then it's added */
@@ -1111,11 +1124,22 @@ int main(int argc, char **argv) {
 
 	print_quads(quad_file);
 
+	generate_all_instructions();
+
+	FILE *instructions_text_file = fopen("instructions_text.txt", "w");
+	assert(instructions_text_file);
+
+	print_instructions_text(instructions_text_file);
+
 	SymTable_free(sym_table);
 	free_errors();
 	free_quads();
+	free_incomplete_jumps();
+	free_const_tables();
+	free_instructions();
 
 	fclose(quad_file);
+	fclose(instructions_text_file);
 	fclose(yyin);
 
 	return 0;

@@ -15,6 +15,7 @@ typedef struct Symbol {
         int isActive;
 	int isTemp;
 	int offset;
+	int taddress;
 	scopespace space;
 } Symbol;
 

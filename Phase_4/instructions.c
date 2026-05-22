@@ -1,11 +1,15 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "instructions.h"
+#include "const_tables.h"
 
 static int count = 0;
 static int capacity = 0;
 static Instruction *Instructions = NULL;
+
+static void operand_to_text(ioperand operand, char *buffer, size_t size);
 
 Instruction* create_instruction(iopcode opcode, ioperand result, ioperand arg1, ioperand arg2, int src_line) {
 	
@@ -81,29 +85,48 @@ char* iopcode_to_string(iopcode opcode) {
 	}
 }
 
-void print_instructions(FILE *f) {
+void print_instructions_text(FILE *f) {
 	
 	int i;
+	char result_buf[32];
+	char arg1_buf[32];
+	char arg2_buf[32];
 
 	assert(f != NULL);
 
-	fprintf(f, "%-8s %-15s %-15s %-15s %-15s %s", "instr#", "opcode", "result", "arg1", "arg2", "src_line");
-	fprintf(f, "\n--------------------------------------------------------------------------------\n");
+	fprintf(f, "\n--- STRING CONSTS ---\n");
+	char **string_consts = get_string_consts();
+	for(i = 0; i < get_string_count(); i++)
+		fprintf(f, "%d: \"%s\"\n", i, string_consts[i]);
+
+	fprintf(f, "\n--- NUMBER CONSTS ---\n");
+	double *number_consts = get_number_consts();
+        for(i = 0; i < get_number_count(); i++)
+                fprintf(f, "%d: %f\n", i, number_consts[i]);	
+
+	fprintf(f, "\n--- LIBRARY FUNCTIONS ---\n");
+	char **libfunc_consts = get_libfunc_consts();
+	for(i = 0; i < get_libfunc_count(); i++)
+		fprintf(f, "%d: %s\n", i, libfunc_consts[i]);
+
+	fprintf(f, "\n--- USER FUNCTIONS ---\n");
+        UserFunc *user_funcs = get_userfunc_consts();
+        for(i = 0; i < get_userfunc_count(); i++)
+                fprintf(f, "%d: name=%s, address=%d, localSize=%d\n", i, user_funcs[i].name, user_funcs[i].address, user_funcs[i].localSize);
+
+	fprintf(f, "\n--- INSTRUCTIONS ---\n");
+	fprintf(f, "%-8s %-15s %-20s %-20s %-20s\n", "instr#", "opcode", "result", "arg1", "arg2");
+	fprintf(f, "-----------------------------------------------------------------------------\n");
 
 	for(i = 0; i < count; i++) {
-		fprintf(
-			f,
-			"%-8d %-15s (%d,%u)         (%d,%u)         (%d,%u)         %d\n",
-			i,
-			iopcode_to_string(Instructions[i].opcode),
-			Instructions[i].result.type, Instructions[i].result.val,
-			Instructions[i].arg1.type, Instructions[i].arg1.val,
-			Instructions[i].arg2.type, Instructions[i].arg2.val,
-			Instructions[i].src_line
-		);
+		operand_to_text(Instructions[i].result, result_buf, sizeof(result_buf));
+		operand_to_text(Instructions[i].arg1, arg1_buf, sizeof(arg1_buf));
+		operand_to_text(Instructions[i].arg2, arg2_buf, sizeof(arg2_buf));
+
+		fprintf(f, "%-8d %-15s %-20s %-20s %-20s\n", i, iopcode_to_string(Instructions[i].opcode), result_buf, arg1_buf, arg2_buf);
 	}
 
-	fprintf(f, "--------------------------------------------------------------------------------\n");
+	fprintf(f, "-----------------------------------------------------------------------------\n");
 }
 
 void free_instructions() {
@@ -112,4 +135,52 @@ void free_instructions() {
 	Instructions = NULL;
 	count = 0;
 	capacity = 0;
+}
+
+static void operand_to_text(ioperand operand, char *buffer, size_t size) {
+	
+	assert(buffer != NULL);
+	assert(size > 0);
+
+	switch(operand.type) {
+		case label_o:
+			snprintf(buffer, size, "label %u", operand.val);
+			break;
+		case global_o:
+			snprintf(buffer, size, "global %u", operand.val);
+			break;
+		case formal_o:
+			snprintf(buffer, size, "formal %u", operand.val);
+			break;
+		case local_o:
+			snprintf(buffer, size, "local %u", operand.val);
+			break;
+		case number_o:
+			snprintf(buffer, size, "number %u", operand.val);
+			break;
+		case string_o:
+			snprintf(buffer, size, "string %u", operand.val);
+			break;
+		case bool_o:
+			snprintf(buffer, size, "bool %u", operand.val);
+			break;
+		case nil_o:
+			snprintf(buffer, size, "nil");
+			break;
+		case userfunc_o:
+			snprintf(buffer, size, "userfunc %u", operand.val);
+			break;
+		case libfunc_o:
+			snprintf(buffer, size, "libfunc %u", operand.val);
+			break;
+		case retval_o:
+			snprintf(buffer, size, "retval");
+			break;
+		case unused_o:
+			snprintf(buffer, size, "-");
+			break;
+		default:
+			snprintf(buffer, size, "?");
+			break;
+	}
 }

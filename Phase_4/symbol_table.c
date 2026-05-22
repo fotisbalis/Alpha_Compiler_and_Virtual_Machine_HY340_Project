@@ -95,10 +95,11 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
     	s->type = strdup(sym->type);
     	s->scope = sym->scope;
     	s->line = sym->line;
-    	s->isActive = sym->isActive;
+	s->isActive = sym->isActive;
 	s->isTemp = sym->isTemp;
 	s->space = sym->space;
 	s->offset = sym->offset;
+	s->taddress = sym->taddress;
 
 	/* Add the new symbol at the start of the bucket */
 	new = (node*)malloc(sizeof(node));

@@ -111,15 +111,19 @@ int new_const_userfunc(int address, int localSize, char *name) {
 	int i;
 	char *copy;
 
-	assert(address >= 0);
-	assert(localSize >= 0);
+	assert(address >= -1);
+	assert(localSize >= -1);
 	assert(name != NULL);
 
 	for(i = 0; i < userfunc_count; i++) {
-		if(userfunc_consts[i].address == address &&
-		   userfunc_consts[i].localSize == localSize &&
-		   strcmp(userfunc_consts[i].name, name) == 0)
+		if(strcmp(userfunc_consts[i].name, name) == 0) {
+			if(address != -1)
+				userfunc_consts[i].address = address;
+			if(localSize != -1)
+				userfunc_consts[i].localSize = localSize;
+
 			return i;
+		}
 	}
 
 	if(userfunc_count >= userfunc_capacity)
@@ -133,6 +137,26 @@ int new_const_userfunc(int address, int localSize, char *name) {
 	userfunc_consts[userfunc_count].name = copy;
 
 	return userfunc_count++;
+}
+
+void update_const_userfunc(int address, int localSize, char *name) {
+	int i;
+
+	assert(address >= -1);
+	assert(localSize >= -1);
+	assert(name != NULL);
+
+	for(i = 0; i < userfunc_count; i++) {
+		if(strcmp(userfunc_consts[i].name, name) == 0) {
+			if(address != -1)
+				userfunc_consts[i].address = address;
+			if(localSize != -1)
+				userfunc_consts[i].localSize = localSize;
+			return;
+		}
+	}
+
+	new_const_userfunc(address, localSize, name);
 }
 
 UserFunc *get_userfunc_consts() {

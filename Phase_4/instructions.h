@@ -60,8 +60,8 @@ typedef struct Instruction {
 } Instruction;
 
 typedef struct UserFunc {
-	unsigned address;
-	unsigned localSize;
+	int address;
+	int localSize;
 	char *name;
 } UserFunc;
 
@@ -77,7 +77,9 @@ int get_instruction_count();
 
 char* iopcode_to_string(iopcode opcode);
 
-void print_instructions(FILE *f);
+void print_instructions_text(FILE *f);
+
+void print_instructions_binary(FILE *f);
 
 void free_instructions();
 
