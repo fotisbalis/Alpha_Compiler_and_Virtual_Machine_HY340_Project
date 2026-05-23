@@ -1,0 +1,53 @@
+// Prefix and postfix on plain variables
+a = ++x;
+x++;
+--y;
+b = y--;
+
+// Prefix and postfix on table members (adds TABLE_GET_ELEM + TABLE_SET_ELEM)
+++a[0];
+a[0]++;
+--a.k;
+a.k--;
+
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      add             x               x                    1                               2    
+2:      assign          _t0             x                                                    2    
+3:      assign          a               _t0                                                  2    
+4:      assign          _t1             a                                                    2    
+
+5:      assign          _t2             x                                                    3    
+6:      add             x               x                    1                               3    
+
+7:      sub             y               y                    1                               4    
+8:      assign          _t3             y                                                    4    
+
+9:      assign          _t4             y                                                    5    
+10:     sub             y               y                    1                               5    
+11:     assign          b               _t4                                                  5    
+12:     assign          _t5             b                                                    5    
+
+13:     tablegetelem    _t6             a                    0                               8    
+14:     add             _t6             _t6                  1                               8    
+15:     tablesetelem    a               0                    _t6                             8    
+
+16:     tablegetelem    _t8             a                    0                               9    
+17:     assign          _t7             _t8                                                  9    
+18:     add             _t8             _t8                  1                               9    
+19:     tablesetelem    a               0                    _t8                             9    
+
+20:     tablegetelem    _t9             a                    "k"                             10   
+21:     sub             _t9             _t9                  1                               10   
+22:     tablesetelem    a               "k"                  _t9                             10   
+
+23:     tablegetelem    _t11            a                    "k"                             11   
+24:     assign          _t10            _t11                                                 11   
+25:     sub             _t11            _t11                 1                               11   
+26:     tablesetelem    a               "k"                  _t11                            11   
+*/

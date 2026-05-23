@@ -1,0 +1,66 @@
+if(a > b){
+    x = 5;
+    y = 6;
+}
+
+z = 7;
+
+if(a > b)
+    x = 5;
+else if(a < b)
+    y = 6;
+else
+    z = 7;
+
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      if_greater                      a                    b                    3          1    
+2:      jump                                                                      5          1    
+3:      assign          _t0             true                                                 1    
+4:      jump                                                                      6          1    
+5:      assign          _t0             false                                                1    
+6:      if_eq                           _t0                  true                 8          1    
+7:      jump                                                                      12         1    
+
+8:      assign          x               5                                                    2    
+9:      assign          _t1             x                                                    2    
+
+10:     assign          y               6                                                    3    
+11:     assign          _t2             y                                                    3    
+
+12:     assign          z               7                                                    6    
+13:     assign          _t3             z                                                    6    
+
+14:     if_greater                      a                    b                    16         8    
+15:     jump                                                                      18         8    
+16:     assign          _t4             true                                                 8    
+17:     jump                                                                      19         8    
+18:     assign          _t4             false                                                8    
+19:     if_eq                           _t4                  true                 21         8    
+20:     jump                                                                      24         8    
+
+21:     assign          x               5                                                    9    
+22:     assign          _t5             x                                                    9    
+
+23:     jump                                                                      36         10   
+24:     if_less                         a                    b                    26         10   
+25:     jump                                                                      28         10   
+26:     assign          _t6             true                                                 10   
+27:     jump                                                                      29         10   
+28:     assign          _t6             false                                                10   
+29:     if_eq                           _t6                  true                 31         10   
+30:     jump                                                                      34         10   
+
+31:     assign          y               6                                                    11   
+32:     assign          _t7             y                                                    11   
+
+33:     jump                                                                      36         12   
+
+34:     assign          z               7                                                    13   
+35:     assign          _t8             z                                                    13   
+*/

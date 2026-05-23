@@ -1,0 +1,57 @@
+a[3] = 1;
+
+a[3][4] = a[3];
+
+a.x = a[3][4];
+
+a.x.y = a.x;
+
+a.x["k"] = a.x.y;
+
+a.x["k"].z[2] = 5;
+
+a["k"].x[1]();
+
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      tablesetelem    a               3                    1                               1    
+2:      tablegetelem    _t0             a                    3                               1    
+
+3:      tablegetelem    _t1             a                    3                               3    
+4:      tablegetelem    _t2             a                    3                               3    
+5:      tablesetelem    _t1             4                    _t2                             3    
+6:      tablegetelem    _t3             _t1                  4                               3    
+
+7:      tablegetelem    _t4             a                    3                               5    
+8:      tablegetelem    _t5             _t4                  4                               5    
+9:      tablesetelem    a               "x"                  _t5                             5    
+10:     tablegetelem    _t6             a                    "x"                             5    
+
+11:     tablegetelem    _t7             a                    "x"                             7    
+12:     tablegetelem    _t8             a                    "x"                             7    
+13:     tablesetelem    _t7             "y"                  _t8                             7    
+14:     tablegetelem    _t9             _t7                  "y"                             7    
+
+15:     tablegetelem    _t10            a                    "x"                             9    
+16:     tablegetelem    _t11            a                    "x"                             9    
+17:     tablegetelem    _t12            _t11                 "y"                             9    
+18:     tablesetelem    _t10            "k"                  _t12                            9    
+19:     tablegetelem    _t13            _t10                 "k"                             9    
+
+20:     tablegetelem    _t14            a                    "x"                             11   
+21:     tablegetelem    _t15            _t14                 "k"                             11   
+22:     tablegetelem    _t16            _t15                 "z"                             11   
+23:     tablesetelem    _t16            2                    5                               11   
+24:     tablegetelem    _t17            _t16                 2                               11   
+
+25:     tablegetelem    _t18            a                    "k"                             13   
+26:     tablegetelem    _t19            _t18                 "x"                             13   
+27:     tablegetelem    _t20            _t19                 1                               13   
+28:     call                            _t20                                                 13   
+29:     getretval       _t21                                                                 13   
+*/

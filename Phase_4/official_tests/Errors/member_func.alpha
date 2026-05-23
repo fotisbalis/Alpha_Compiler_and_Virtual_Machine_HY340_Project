@@ -1,0 +1,129 @@
+function foo(){}
+
+// Error: can't get member of function symbol (can only get from table)
+foo.a;
+
+// Error: same
+print.a;
+
+foo();
+
+// Error: same
+foo..a();
+
+// Error: same
+input[a];
+
+// Error: same
+foo[g];
+
+
+
+
+/*
+Expected output:
+
+LINE: 1 funcdeclare <- FUNCTION ID
+LINE: 1 idlist <- 
+LINE: 1 funcparams <- ( idlist )
+LINE: 1 block <- { }
+LINE: 1 funcdef <- FUNCTION ID ( idlist ) block
+LINE: 1 statement <- function definition
+LINE: 1 statement list <- statement
+LINE: 3 lvalue <- ID
+[SYNTAX WARNING] - Attempted to get key 'a' on function 'foo' instead of an object | custom_tests/Phase2/Errors/member_func.alpha:3:5
+LINE: 3 member <- lvalue . ID
+LINE: 3 lvalue <- member
+LINE: 3 primary <- lvalue
+LINE: 3 term <- primary
+LINE: 3 expression <- term
+LINE: 3 statement <- expression ;
+LINE: 3 statement list <- statement statement list
+LINE: 5 lvalue <- ID
+[SYNTAX WARNING] - Attempted to get key 'a' on function 'print' instead of an object | custom_tests/Phase2/Errors/member_func.alpha:5:7
+LINE: 5 member <- lvalue . ID
+LINE: 5 lvalue <- member
+LINE: 5 member <- lvalue . ID
+LINE: 5 lvalue <- member
+LINE: 5 primary <- lvalue
+LINE: 5 term <- primary
+LINE: 5 expression <- term
+LINE: 5 statement <- expression ;
+LINE: 5 statement list <- statement statement list
+LINE: 7 lvalue <- ID
+LINE: 7 elist <- 
+LINE: 7 normcall <- ( elist )
+LINE: 7 callsuffix <- normcall
+LINE: 7 call <- lvalue callsuffix
+LINE: 7 primary <- call
+LINE: 7 term <- primary
+LINE: 7 expression <- term
+LINE: 7 statement <- expression ;
+LINE: 7 statement list <- statement statement list
+LINE: 9 lvalue <- ID
+LINE: 9 elist <- 
+LINE: 9 methodcall <- .. ID ( elist )
+LINE: 9 callsuffix <- methodcall
+[SYNTAX WARNING] - Attempted to call method 'a' on function 'foo' instead of an object | custom_tests/Phase2/Errors/member_func.alpha:9:8
+LINE: 9 call <- lvalue callsuffix
+LINE: 9 primary <- call
+LINE: 9 term <- primary
+LINE: 9 expression <- term
+LINE: 9 statement <- expression ;
+LINE: 9 statement list <- statement statement list
+LINE: 11 lvalue <- ID
+LINE: 11 lvalue <- ID
+LINE: 11 primary <- lvalue
+LINE: 11 term <- primary
+LINE: 11 expression <- term
+[SYNTAX WARNING] - Attempted to get member value on function 'input' instead of an object | custom_tests/Phase2/Errors/member_func.alpha:11:8
+LINE: 11 member <- lvalue [ expr ] 
+LINE: 11 lvalue <- member
+LINE: 11 primary <- lvalue
+LINE: 11 term <- primary
+LINE: 11 expression <- term
+LINE: 11 statement <- expression ;
+LINE: 11 statement list <- statement statement list
+LINE: 13 lvalue <- ID
+LINE: 13 lvalue <- ID
+LINE: 13 primary <- lvalue
+LINE: 13 term <- primary
+LINE: 13 expression <- term
+[SYNTAX WARNING] - Attempted to get member value on function 'foo' instead of an object | custom_tests/Phase2/Errors/member_func.alpha:13:6
+LINE: 13 member <- lvalue [ expr ] 
+LINE: 13 lvalue <- member
+LINE: 13 member <- lvalue . ID
+LINE: 13 lvalue <- member
+LINE: 13 primary <- lvalue
+LINE: 13 term <- primary
+LINE: 13 expression <- term
+LINE: 13 statement <- expression ;
+LINE: 13 statement list <- statement statement list
+LINE: 13 program <- stmt_list
+
+===========================================
+                SYMBOL TABLE
+===========================================
+
+        ----- Scope 0 (Global) -----
+
+Name                 Type            Line
+-------------------------------------------
+a                    GLOBALVAR       15     
+g                    GLOBALVAR       18     
+typeof               LIBFUNC        
+foo                  USERFUNC        1      
+input                LIBFUNC        
+strtonum             LIBFUNC        
+sin                  LIBFUNC        
+cos                  LIBFUNC        
+objectcopy           LIBFUNC        
+objecttotalmembers   LIBFUNC        
+objectmemberkeys     LIBFUNC        
+argument             LIBFUNC        
+sqrt                 LIBFUNC        
+print                LIBFUNC        
+totalarguments       LIBFUNC        
+
+===========================================
+*/

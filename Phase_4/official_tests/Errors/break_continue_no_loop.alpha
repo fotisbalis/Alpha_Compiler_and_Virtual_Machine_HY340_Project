@@ -1,0 +1,136 @@
+// Error: Can't have break/continue outside of loop.
+{
+    break;
+    {
+        continue;
+    }
+}
+
+while(true){
+    // Legal
+    break; continue;
+
+    function foo(){
+        // Error: "Special" case, funcdeclare inside while, *NOT* inside a loop here
+        break;
+        continue;
+
+        while(false){
+            // Legal
+            break;
+            continue;
+        }
+    }
+
+    // Legal: special case, checks if loop counter is being kept after funcdeclare (should reset when opening func and restore when finishing funcbody), -0.3 if this doesn't work
+    break;
+}
+
+
+
+
+
+
+/*
+Expected output:
+
+[SYNTAX WARNING] - Attempted to `break` outside of loop | custom_tests/Phase2/Errors/break_continue_no_loop.alpha:3:10
+LINE: 3 break <- BREAK ;
+LINE: 3 statement <- break ;
+LINE: 3 statement list <- statement
+[SYNTAX WARNING] - Attempted to `continue` outside of loop | custom_tests/Phase2/Errors/break_continue_no_loop.alpha:5:17
+LINE: 5 continue <- CONTINUE ;
+LINE: 5 statement <- continue ;
+LINE: 5 statement list <- statement
+LINE: 6 block <- { stmt_list }
+LINE: 6 statement <- block
+LINE: 6 statement list <- statement statement list
+LINE: 7 block <- { stmt_list }
+LINE: 7 statement <- block
+LINE: 7 statement list <- statement
+LINE: 9 whilestart <- WHILE
+LINE: 9 const <- TRUE
+LINE: 9 primary <- const
+LINE: 9 term <- primary
+LINE: 9 expression <- term
+LINE: 9 whileexpr <- ( expr )
+LINE: 10 break <- BREAK ;
+LINE: 10 statement <- break ;
+LINE: 10 statement list <- statement
+LINE: 10 continue <- CONTINUE ;
+LINE: 10 statement <- continue ;
+LINE: 10 statement list <- statement statement list
+LINE: 12 funcdeclare <- FUNCTION ID
+LINE: 12 idlist <- 
+LINE: 12 funcparams <- ( idlist )
+[SYNTAX WARNING] - Attempted to `break` outside of loop | custom_tests/Phase2/Errors/break_continue_no_loop.alpha:13:14
+LINE: 13 break <- BREAK ;
+LINE: 13 statement <- break ;
+LINE: 13 statement list <- statement
+[SYNTAX WARNING] - Attempted to `continue` outside of loop | custom_tests/Phase2/Errors/break_continue_no_loop.alpha:14:17
+LINE: 14 continue <- CONTINUE ;
+LINE: 14 statement <- continue ;
+LINE: 14 statement list <- statement statement list
+LINE: 16 whilestart <- WHILE
+LINE: 16 const <- FALSE
+LINE: 16 primary <- const
+LINE: 16 term <- primary
+LINE: 16 expression <- term
+LINE: 16 whileexpr <- ( expr )
+LINE: 17 break <- BREAK ;
+LINE: 17 statement <- break ;
+LINE: 17 statement list <- statement
+LINE: 18 continue <- CONTINUE ;
+LINE: 18 statement <- continue ;
+LINE: 18 statement list <- statement statement list
+LINE: 19 block <- { stmt_list }
+LINE: 19 statement <- block
+LINE: 19 loopstmt <- loopenter stmt loopexit
+LINE: 19 whilestmt <- while stmt
+LINE: 19 statement <- while
+LINE: 19 statement list <- statement statement list
+LINE: 20 block <- { stmt_list }
+LINE: 20 funcdef <- FUNCTION ID ( idlist ) block
+LINE: 20 statement <- function definition
+LINE: 20 statement list <- statement statement list
+LINE: 21 block <- { stmt_list }
+LINE: 21 statement <- block
+LINE: 21 loopstmt <- loopenter stmt loopexit
+LINE: 21 whilestmt <- while stmt
+LINE: 21 statement <- while
+LINE: 21 statement list <- statement statement list
+LINE: 23 program <- stmt_list
+
+===========================================
+                SYMBOL TABLE
+===========================================
+
+        ----- Scope 0 (Global) -----
+
+Name                 Type            Line
+-------------------------------------------
+typeof               LIBFUNC        
+input                LIBFUNC        
+strtonum             LIBFUNC        
+sin                  LIBFUNC        
+cos                  LIBFUNC        
+objectcopy           LIBFUNC        
+objecttotalmembers   LIBFUNC        
+objectmemberkeys     LIBFUNC        
+argument             LIBFUNC        
+sqrt                 LIBFUNC        
+print                LIBFUNC        
+totalarguments       LIBFUNC        
+
+            ----- Scope 1 -----
+
+Name                 Type            Line
+-------------------------------------------
+foo                  USERFUNC        13     
+
+            ----- Scope 2 -----
+
+  (empty)
+
+===========================================
+*/

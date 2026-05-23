@@ -1,0 +1,46 @@
+i = 0;
+j = 1;
+for( ; i < 5 ; i = i + 1, j = 2){
+    a = 1;
+    b = 2;
+}
+
+c = 3;
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      assign          i               0                                                    1    
+2:      assign          _t0             i                                                    1    
+
+3:      assign          j               1                                                    2    
+4:      assign          _t1             j                                                    2    
+
+5:      if_less                         i                    5                    7          3    
+6:      jump                                                                      9          3    
+7:      assign          _t2             true                                                 3    
+8:      jump                                                                      10         3    
+9:      assign          _t2             false                                                3    
+10:     if_eq                           _t2                  true                 18         3    
+11:     jump                                                                      23         3    
+12:     add             _t3             i                    1                               3    
+13:     assign          i               _t3                                                  3    
+14:     assign          _t4             i                                                    3    
+15:     assign          j               2                                                    3    
+16:     assign          _t5             j                                                    3    
+17:     jump                                                                      5          3    
+
+18:     assign          a               1                                                    4    
+19:     assign          _t6             a                                                    4    
+
+20:     assign          b               2                                                    5    
+21:     assign          _t7             b                                                    5    
+
+22:     jump                                                                      12         6    
+
+23:     assign          c               3                                                    8    
+24:     assign          _t8             c                                                    8    
+*/

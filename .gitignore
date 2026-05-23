@@ -5,6 +5,8 @@ parser.tab.c
 parser.tab.h
 parser
 quads.txt
+instructions.txt
+alpha.abc
 *.o
 
 # Editor

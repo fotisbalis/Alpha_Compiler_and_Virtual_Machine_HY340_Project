@@ -1,0 +1,35 @@
+function f(a){return f;}
+
+// call <- call ( elist ) grammar rule
+ 
+(function (){})()();
+
+f(1)(2)(3);
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      funcstart       f                                                                    1    
+2:      ret             f                                                                    1    
+3:      funcend         f                                                                    1    
+
+4:      funcstart       _f0                                                                  5    
+5:      funcend         _f0                                                                  5    
+6:      call                            _f0                                                  5    
+7:      getretval       _t0                                                                  5    
+8:      call                            _t0                                                  5    
+9:      getretval       _t1                                                                  5    
+
+10:     param                           1                                                    7    
+11:     call                            f                                                    7    
+12:     getretval       _t2                                                                  7    
+13:     param                           2                                                    7    
+14:     call                            _t2                                                  7    
+15:     getretval       _t3                                                                  7    
+16:     param                           3                                                    7    
+17:     call                            _t3                                                  7    
+18:     getretval       _t4                                                                  7    
+*/

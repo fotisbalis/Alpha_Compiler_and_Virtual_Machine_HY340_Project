@@ -1,0 +1,40 @@
+x + y;
+z * w;
+t - s;
+u / v;
+r % l;
+
+// Will not yield any quads if constant operations
+// are calculated during compilation.
+4 + 5;
+6 * 8;
+4 - 9;
+3 / 1;
+0 % 3;
+
+// This should be an error but not mandatory
+4 / 0;
+x / 0;
+
+
+
+/*
+Expected output:
+
+[COMPILER WARNING] - division with 0 (when evaluating division with constants) | custom_tests/Phase3/Semantic/arith_ops.alpha:16:5
+[COMPILER WARNING] - division with 0 | custom_tests/Phase3/Semantic/arith_ops.alpha:17:5
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      add             _t0             x                    y                               1    
+
+2:      mul             _t1             z                    w                               2    
+
+3:      sub             _t2             t                    s                               3    
+
+4:      div             _t3             u                    v                               4    
+
+5:      mod             _t4             r                    l                               5    
+
+6:      div             _t5             x                    0                               17   
+*/

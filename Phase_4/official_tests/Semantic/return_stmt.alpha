@@ -1,0 +1,38 @@
+function f(x){
+    if(x == 0) return 1;
+    return x + 1;
+}
+
+function g(){
+    return;
+}
+
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      funcstart       f                                                                    1    
+
+2:      if_eq                           x                    0                    4          2    
+3:      jump                                                                      6          2    
+4:      assign          _t0             true                                                 2    
+5:      jump                                                                      7          2    
+6:      assign          _t0             false                                                2    
+7:      if_eq                           _t0                  true                 9          2    
+8:      jump                                                                      10         2    
+9:      ret             1                                                                    2    
+
+10:     add             _t1             x                    1                               3    
+11:     ret             _t1                                                                  3    
+
+12:     funcend         f                                                                    4    
+
+13:     funcstart       g                                                                    6    
+
+14:     ret                                                                                  7    
+
+15:     funcend         g                                                                    8
+*/

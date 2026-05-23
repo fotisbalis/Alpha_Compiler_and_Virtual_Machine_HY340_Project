@@ -5,11 +5,17 @@
 #include "instructions.h"
 #include "const_tables.h"
 
+#define AVM_BINARY_MAGIC 34020026u
+
 static int count = 0;
 static int capacity = 0;
 static Instruction *Instructions = NULL;
 
 static void operand_to_text(ioperand operand, char *buffer, size_t size);
+static void write_unsigned(FILE *f, unsigned value);
+static void write_int(FILE *f, int value);
+static void write_double(FILE *f, double value);
+static void write_string_bytes(FILE *f, const char *str);
 
 Instruction* create_instruction(iopcode opcode, ioperand result, ioperand arg1, ioperand arg2, int src_line) {
 	
@@ -85,7 +91,7 @@ char* iopcode_to_string(iopcode opcode) {
 	}
 }
 
-void print_instructions_text(FILE *f) {
+void print_instructions(FILE *f) {
 	
 	int i;
 	char result_buf[32];
@@ -127,6 +133,58 @@ void print_instructions_text(FILE *f) {
 	}
 
 	fprintf(f, "-----------------------------------------------------------------------------\n");
+}
+
+void create_binary_file(FILE *f) {
+
+	int i;
+	char **string_consts;
+	double *number_consts;
+	char **libfunc_consts;
+	UserFunc *user_funcs;
+
+	assert(f != NULL);
+
+	write_unsigned(f, AVM_BINARY_MAGIC);
+
+	write_int(f, get_string_count());
+	string_consts = get_string_consts();
+	for(i = 0; i < get_string_count(); i++)
+		write_string_bytes(f, string_consts[i]);
+
+	write_int(f, get_number_count());
+	number_consts = get_number_consts();
+	for(i = 0; i < get_number_count(); i++)
+		write_double(f, number_consts[i]);
+
+	write_int(f, get_userfunc_count());
+	user_funcs = get_userfunc_consts();
+	for(i = 0; i < get_userfunc_count(); i++) {
+		write_int(f, user_funcs[i].address);
+		write_int(f, user_funcs[i].localSize);
+		write_string_bytes(f, user_funcs[i].name);
+	}
+
+	write_int(f, get_libfunc_count());
+	libfunc_consts = get_libfunc_consts();
+	for(i = 0; i < get_libfunc_count(); i++)
+		write_string_bytes(f, libfunc_consts[i]);
+
+	write_int(f, count);
+	for(i = 0; i < count; i++) {
+		write_int(f, Instructions[i].opcode);
+
+		write_int(f, Instructions[i].result.type);
+		write_unsigned(f, Instructions[i].result.val);
+
+		write_int(f, Instructions[i].arg1.type);
+		write_unsigned(f, Instructions[i].arg1.val);
+
+		write_int(f, Instructions[i].arg2.type);
+		write_unsigned(f, Instructions[i].arg2.val);
+
+		write_int(f, Instructions[i].src_line);
+	}
 }
 
 void free_instructions() {
@@ -183,4 +241,28 @@ static void operand_to_text(ioperand operand, char *buffer, size_t size) {
 			snprintf(buffer, size, "?");
 			break;
 	}
+}
+
+static void write_unsigned(FILE *f, unsigned value) {
+	assert(fwrite(&value, sizeof(unsigned), 1, f) == 1);
+}
+
+static void write_int(FILE *f, int value) {
+	assert(fwrite(&value, sizeof(int), 1, f) == 1);
+}
+
+static void write_double(FILE *f, double value) {
+	assert(fwrite(&value, sizeof(double), 1, f) == 1);
+}
+
+static void write_string_bytes(FILE *f, const char *str) {
+	unsigned length;
+
+	assert(str != NULL);
+
+	length = (unsigned) strlen(str);
+	write_unsigned(f, length);
+
+	if(length > 0)
+		assert(fwrite(str, sizeof(char), length, f) == length);
 }

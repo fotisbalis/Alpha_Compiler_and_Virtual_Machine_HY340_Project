@@ -3,7 +3,7 @@
 all:
 	flex scanner.l
 	bison -d parser.y
-	gcc lex.yy.c parser.tab.c symbol_table.c error.c symbol.c utils.c quad.c expr.c pending_labels.c stmt.c indexed.c instructions.c const_tables.c generator.c incomplete_jumps.c -o parser
+	gcc *.c -o parser
 
 clean:
 	rm -f parser
@@ -11,4 +11,5 @@ clean:
 	rm -f parser.tab.c
 	rm -f parser.tab.h
 	rm -f quads.txt
-	rm -f instructions_text.txt
+	rm -f instructions.txt
+	rm -f alpha.abc

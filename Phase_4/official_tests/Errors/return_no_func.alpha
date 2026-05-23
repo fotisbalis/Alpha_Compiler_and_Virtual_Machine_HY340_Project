@@ -1,0 +1,111 @@
+// Error: returning outside of function
+return;
+
+function foo(){
+    // Legal
+    return true;
+
+    while(true){
+        // Legal: empty return
+        if(false) return;
+    }
+}
+
+
+while(false){
+    // Error: same as previous one, inside of loop just in case...
+    return;
+}
+
+
+
+
+/*
+Expected output:
+
+[SYNTAX WARNING] - Attempted to `return` outside of function | custom_tests/Phase2/Errors/return_no_func.alpha:1:7
+LINE: 1 returnstmt <- RETURN ;
+LINE: 1 statement <- return
+LINE: 1 statement list <- statement
+LINE: 3 funcdeclare <- FUNCTION ID
+LINE: 3 idlist <- 
+LINE: 3 funcparams <- ( idlist )
+LINE: 4 const <- TRUE
+LINE: 4 primary <- const
+LINE: 4 term <- primary
+LINE: 4 expression <- term
+LINE: 4 returnstmt <- RETURN expression ;
+LINE: 4 statement <- return
+LINE: 4 statement list <- statement
+LINE: 6 whilestart <- WHILE
+LINE: 6 const <- TRUE
+LINE: 6 primary <- const
+LINE: 6 term <- primary
+LINE: 6 expression <- term
+LINE: 6 whileexpr <- ( expr )
+LINE: 7 const <- FALSE
+LINE: 7 primary <- const
+LINE: 7 term <- primary
+LINE: 7 expression <- term
+LINE: 7 ifprefix <- IF ( expr )
+LINE: 7 returnstmt <- RETURN ;
+LINE: 7 statement <- return
+LINE: 8 ifstmt <- ifprefix stmt
+LINE: 8 statement <- if
+LINE: 8 statement list <- statement
+LINE: 8 block <- { stmt_list }
+LINE: 8 statement <- block
+LINE: 8 loopstmt <- loopenter stmt loopexit
+LINE: 8 whilestmt <- while stmt
+LINE: 8 statement <- while
+LINE: 8 statement list <- statement statement list
+LINE: 9 block <- { stmt_list }
+LINE: 9 funcdef <- FUNCTION ID ( idlist ) block
+LINE: 9 statement <- function definition
+LINE: 9 statement list <- statement statement list
+LINE: 11 whilestart <- WHILE
+LINE: 11 const <- FALSE
+LINE: 11 primary <- const
+LINE: 11 term <- primary
+LINE: 11 expression <- term
+LINE: 11 whileexpr <- ( expr )
+[SYNTAX WARNING] - Attempted to `return` outside of function | custom_tests/Phase2/Errors/return_no_func.alpha:12:11
+LINE: 12 returnstmt <- RETURN ;
+LINE: 12 statement <- return
+LINE: 12 statement list <- statement
+LINE: 13 block <- { stmt_list }
+LINE: 13 statement <- block
+LINE: 13 loopstmt <- loopenter stmt loopexit
+LINE: 13 whilestmt <- while stmt
+LINE: 13 statement <- while
+LINE: 13 statement list <- statement statement list
+LINE: 13 program <- stmt_list
+
+===========================================
+                SYMBOL TABLE
+===========================================
+
+        ----- Scope 0 (Global) -----
+
+Name                 Type            Line
+-------------------------------------------
+typeof               LIBFUNC        
+foo                  USERFUNC        4      
+input                LIBFUNC        
+strtonum             LIBFUNC        
+sin                  LIBFUNC        
+cos                  LIBFUNC        
+objectcopy           LIBFUNC        
+objecttotalmembers   LIBFUNC        
+objectmemberkeys     LIBFUNC        
+argument             LIBFUNC        
+sqrt                 LIBFUNC        
+print                LIBFUNC        
+totalarguments       LIBFUNC        
+
+            ----- Scope 1 -----
+
+  (empty)
+
+===========================================
+*/

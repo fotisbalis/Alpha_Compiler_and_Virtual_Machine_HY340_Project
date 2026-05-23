@@ -1,0 +1,33 @@
+function a(x, y, z){
+    function (){
+        function c(k){
+            k = 5;
+            l = 4;
+        }
+    }
+}
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      funcstart       a                                                                    1    
+
+2:      funcstart       _f0                                                                  2    
+
+3:      funcstart       c                                                                    3    
+
+4:      assign          k               5                                                    4    
+5:      assign          _t0             k                                                    4    
+
+6:      assign          l               4                                                    5    
+7:      assign          _t1             l                                                    5    
+
+8:      funcend         c                                                                    6    
+
+9:      funcend         _f0                                                                  7    
+
+10:     funcend         a                                                                    8    
+*/

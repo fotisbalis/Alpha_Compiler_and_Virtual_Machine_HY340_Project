@@ -1126,10 +1126,14 @@ int main(int argc, char **argv) {
 
 	generate_all_instructions();
 
-	FILE *instructions_text_file = fopen("instructions_text.txt", "w");
+	FILE *instructions_text_file = fopen("instructions.txt", "w");
 	assert(instructions_text_file);
 
-	print_instructions_text(instructions_text_file);
+	FILE *instructions_binary_file = fopen("alpha.abc", "wb");
+	assert(instructions_binary_file);
+
+	print_instructions(instructions_text_file);
+	create_binary_file(instructions_binary_file);
 
 	SymTable_free(sym_table);
 	free_errors();
@@ -1140,6 +1144,7 @@ int main(int argc, char **argv) {
 
 	fclose(quad_file);
 	fclose(instructions_text_file);
+	fclose(instructions_binary_file);
 	fclose(yyin);
 
 	return 0;

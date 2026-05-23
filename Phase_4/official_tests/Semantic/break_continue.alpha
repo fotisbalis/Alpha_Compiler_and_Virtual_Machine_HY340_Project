@@ -1,0 +1,70 @@
+while(i < 10){
+    if(i == 7) break;
+    continue;
+}
+
+while(true){
+    for( ; j < 5 ; ){
+        if(j == 2) continue;
+        break;
+    }
+    break;
+}
+
+
+/*
+Expected output:
+
+quad#   opcode          result          arg1                 arg2                 label      line
+--------------------------------------------------------------------------------------------------
+
+1:      if_less                         i                    10                   3          1    
+2:      jump                                                                      5          1    
+3:      assign          _t0             true                                                 1    
+4:      jump                                                                      6          1    
+5:      assign          _t0             false                                                1    
+6:      if_eq                           _t0                  true                 8          1    
+7:      jump                                                                      18         1    
+
+8:      if_eq                           i                    7                    10         2    
+9:      jump                                                                      12         2    
+10:     assign          _t1             true                                                 2    
+11:     jump                                                                      13         2    
+12:     assign          _t1             false                                                2    
+13:     if_eq                           _t1                  true                 15         2    
+14:     jump                                                                      16         2    
+15:     jump                                                                      18         2    
+
+16:     jump                                                                      1          3    
+
+17:     jump                                                                      1          4    
+
+18:     if_eq                           true                 true                 20         6    
+19:     jump                                                                      40         6    
+
+20:     if_less                         j                    5                    22         7    
+21:     jump                                                                      24         7    
+22:     assign          _t2             true                                                 7    
+23:     jump                                                                      25         7    
+24:     assign          _t2             false                                                7    
+25:     if_eq                           _t2                  true                 28         7    
+26:     jump                                                                      38         7    
+27:     jump                                                                      20         7    
+
+28:     if_eq                           j                    2                    30         8    
+29:     jump                                                                      32         8    
+30:     assign          _t3             true                                                 8    
+31:     jump                                                                      33         8    
+32:     assign          _t3             false                                                8    
+33:     if_eq                           _t3                  true                 35         8    
+34:     jump                                                                      36         8    
+35:     jump                                                                      27         8    
+
+36:     jump                                                                      38         9    
+
+37:     jump                                                                      27         10   
+
+38:     jump                                                                      40         11   
+
+39:     jump                                                                      18         12   
+*/
