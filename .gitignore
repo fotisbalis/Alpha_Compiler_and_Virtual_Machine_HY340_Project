@@ -7,6 +7,8 @@ parser
 quads.txt
 instructions.txt
 alpha.abc
+compiler
+virtual_machine
 *.o
 
 # Editor
