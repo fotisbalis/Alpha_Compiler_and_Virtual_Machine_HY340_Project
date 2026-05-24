@@ -132,3 +132,68 @@ void assign_memcell(avm_memcell *left_memcell, avm_memcell *right_memcell) {
 	clear_memcell(left_memcell);
 	copy_memcell(left_memcell, right_memcell);
 }
+
+int memcell_to_bool(const avm_memcell *memcell) {
+	
+	assert(memcell != NULL);
+
+	switch(memcell->type) {
+		case number_m:
+			return memcell->data.numVal != 0;
+		case string_m:
+			return memcell->data.strVal != NULL && memcell->data.strVal[0] != '\0';
+		case bool_m:
+			return memcell->data.boolVal != 0;
+		case table_m:
+			return True;
+		case userfunc_m:
+			return True;
+		case libfunc_m:
+			return True;
+		case nil_m:
+			return False;
+		case undef_m:
+			return False;
+		default:
+			assert(0);
+	}
+}
+
+int are_equal(const avm_memcell *left_memcell, const avm_memcell *right_memcell) {
+	
+	assert(left_memcell != NULL);
+	assert(right_memcell != NULL);
+
+	if(left_memcell->type == undef_m || right_memcell->type == undef_m)
+		return False;
+
+	if(left_memcell->type == nil_m || right_memcell->type == nil_m)
+		return left_memcell->type == nil_m && right_memcell->type == nil_m;
+
+	if(left_memcell->type == bool_m || right_memcell->type == bool_m)
+		return memcell_to_bool(left_memcell) == memcell_to_bool(right_memcell);
+
+	if(left_memcell->type != right_memcell->type)
+		return False;
+
+	switch(left_memcell->type) {
+		case number_m:
+			return left_memcell->data.numVal == right_memcell->data.numVal;
+		case string_m:
+			return strcmp(left_memcell->data.strVal, right_memcell->data.strVal) == 0;
+		case userfunc_m:
+			return left_memcell->data.funcVal == right_memcell->data.funcVal;
+		case libfunc_m:
+			return strcmp(left_memcell->data.libfuncVal, right_memcell->data.libfuncVal) == 0;
+		case table_m:
+			return left_memcell->data.tableVal == right_memcell->data.tableVal;
+		case bool_m:
+			return left_memcell->data.boolVal == right_memcell->data.boolVal;
+		case nil_m:
+			return True;
+		case undef_m:
+			return False;
+		default:
+			assert(0);
+	}
+}
