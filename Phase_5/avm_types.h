@@ -1,6 +1,9 @@
 #ifndef AVM_TYPES_H
 #define AVM_TYPES_H
 
+#define True 1
+#define False 0
+
 typedef enum avm_opcode {
 	assign_v,
 	add_v,
