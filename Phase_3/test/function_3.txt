@@ -1,6 +1,0 @@
-function foo(a, b) {
-	x = a + b;
-	return x;
-}
-
-x = 5;

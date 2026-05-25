@@ -1,1 +1,0 @@
-if (a and not b) x = 1;

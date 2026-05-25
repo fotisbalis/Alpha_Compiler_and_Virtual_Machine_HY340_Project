@@ -1,7 +1,0 @@
-function outer() {
-    x = 1;
-
-    function inner() {
-        x = 2;
-    }
-}

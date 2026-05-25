@@ -1,9 +1,0 @@
-x = 0;
-while (x < 5) {
-    if(x == 3) {
-	x = x + 2;
-	continue;
-    }
-    x = x + 1;
-}
-z = 1;
