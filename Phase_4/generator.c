@@ -357,12 +357,16 @@ void generate_FUNCEND(Quad *quad) {
 	Instruction instruction;
 
 	assert(quad != NULL);
+	assert(quad->res != NULL);
+	assert(quad->res->sym != NULL);
 
 	instruction.opcode = funcexit_i;
 	make_operand(quad->res, &instruction.result);
 	reset_operand(&instruction.arg1);
 	reset_operand(&instruction.arg2);
 	instruction.src_line = 0;
+
+	update_const_userfunc(quad->res->sym->taddress, quad->res->sym->localSize, quad->res->sym->name);
 
 	quad->taddress = get_instruction_count();
 	new_instruction(instruction);

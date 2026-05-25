@@ -100,6 +100,7 @@ void SymTable_put(SymTable_T oSymTable, Symbol* sym) {
 	s->space = sym->space;
 	s->offset = sym->offset;
 	s->taddress = sym->taddress;
+	s->localSize = sym->localSize;
 
 	/* Add the new symbol at the start of the bucket */
 	new = (node*)malloc(sizeof(node));

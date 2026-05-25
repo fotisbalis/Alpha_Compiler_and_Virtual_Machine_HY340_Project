@@ -16,6 +16,7 @@ typedef struct Symbol {
 	int isTemp;
 	int offset;
 	int taddress;
+	int localSize;
 	scopespace space;
 } Symbol;
 

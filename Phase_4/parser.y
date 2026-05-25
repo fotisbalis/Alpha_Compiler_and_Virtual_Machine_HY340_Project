@@ -782,6 +782,9 @@ funcdef:
 		SymTable_hide_scope(sym_table, current_scope);
 
 		if(function_started == 1){
+			assert($3 != NULL);
+			assert($3->sym != NULL);
+			$3->sym->localSize = current_scope_offset();
 			fill_pending_labels_of_list($9->ReturnLabels, get_quad_count());
 			new_quad(funcend, $3, NULL, NULL, NO_LABEL);
 			$$ = $3;			
@@ -1119,21 +1122,27 @@ int main(int argc, char **argv) {
 	
 	SymTable_print(sym_table);
 
-	FILE *quad_file = fopen("quads.txt", "w");
-        assert(quad_file);
+	if(!has_errors()) {
+		FILE *quad_file = fopen("quads.txt", "w");
+        	assert(quad_file);
 
-	print_quads(quad_file);
+		print_quads(quad_file);
+	
+		generate_all_instructions();
 
-	generate_all_instructions();
+		FILE *instructions_text_file = fopen("instructions.txt", "w");
+		assert(instructions_text_file);
 
-	FILE *instructions_text_file = fopen("instructions.txt", "w");
-	assert(instructions_text_file);
+		FILE *instructions_binary_file = fopen("alpha.abc", "wb");
+		assert(instructions_binary_file);
 
-	FILE *instructions_binary_file = fopen("alpha.abc", "wb");
-	assert(instructions_binary_file);
-
-	print_instructions(instructions_text_file);
-	create_binary_file(instructions_binary_file);
+		print_instructions(instructions_text_file);
+		create_binary_file(instructions_binary_file);
+	
+		fclose(quad_file);
+        	fclose(instructions_text_file);
+        	fclose(instructions_binary_file);
+	}
 
 	SymTable_free(sym_table);
 	free_errors();
@@ -1142,9 +1151,6 @@ int main(int argc, char **argv) {
 	free_const_tables();
 	free_instructions();
 
-	fclose(quad_file);
-	fclose(instructions_text_file);
-	fclose(instructions_binary_file);
 	fclose(yyin);
 
 	return 0;

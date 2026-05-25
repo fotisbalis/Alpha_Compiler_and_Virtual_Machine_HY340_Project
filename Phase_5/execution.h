@@ -23,6 +23,11 @@ void execute_jlt(const avm_instruction *instruction);
 void execute_jgt(const avm_instruction *instruction);
 void execute_jump(const avm_instruction *instruction);
 
+void execute_call(const avm_instruction *instruction);
+void execute_pusharg(const avm_instruction *instruction);
+void execute_funcstart(const avm_instruction *instruction);
+void execute_funcend(const avm_instruction *instruction);
+
 void execute_nop(const avm_instruction *instruction);
 
 #endif

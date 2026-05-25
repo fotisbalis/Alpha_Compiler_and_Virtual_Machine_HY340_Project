@@ -3,10 +3,10 @@
 all:
 	flex scanner.l
 	bison -d parser.y
-	gcc *.c -o parser
+	gcc *.c -o compiler
 
 clean:
-	rm -f parser
+	rm -f compiler
 	rm -f lex.yy.c
 	rm -f parser.tab.c
 	rm -f parser.tab.h

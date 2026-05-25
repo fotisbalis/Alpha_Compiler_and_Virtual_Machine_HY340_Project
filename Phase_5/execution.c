@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "execution.h"
+#include "libfuncs.h"
 
 static void execute_unsupported(const avm_instruction *instruction);
 static void execute_arithmetic(const avm_instruction *instruction, int opcode);
@@ -27,10 +28,10 @@ static execute_func_t execute_dispatch[] = {
 	execute_jlt,
 	execute_jgt,
 	execute_jump,
-	execute_unsupported,
-	execute_unsupported,
-	execute_unsupported,
-	execute_unsupported,
+	execute_call,
+	execute_pusharg,
+	execute_funcstart,
+	execute_funcend,
 	execute_unsupported,
 	execute_unsupported,
 	execute_unsupported,
@@ -179,6 +180,111 @@ void execute_jump(const avm_instruction *instruction) {
 	assert((int) instruction->result.val <= binary->instruction_count);
 
 	set_pc((int) instruction->result.val);
+}
+
+void execute_call(const avm_instruction *instruction) {
+
+	avm_memcell *function_memcell;
+
+	assert(instruction != NULL);
+
+	function_memcell = translate_operand(&instruction->arg1, get_ax_register());
+	assert(function_memcell != NULL);
+
+	if(function_memcell->type == userfunc_m) {
+		save_call_environment();
+		reset_total_actuals();
+		set_pc(function_memcell->data.funcVal);
+	}
+	else if(function_memcell->type == libfunc_m) {
+		save_call_environment();
+		reset_total_actuals();
+		set_topsp(get_top());
+		call_library_function(function_memcell->data.libfuncVal);
+	}
+	else
+		assert(0);
+}
+
+void execute_pusharg(const avm_instruction *instruction) {
+
+	avm_memcell *actual_argument;
+
+	assert(instruction != NULL);
+	assert(stack != NULL);
+	assert(get_top() >= 0);
+	assert(get_top() < STACK_SIZE);
+
+	actual_argument = translate_operand(&instruction->arg1, get_ax_register());
+	assert(actual_argument != NULL);
+
+	assign_memcell(&stack[get_top()], actual_argument);
+	set_top(get_top() - 1);
+	inc_total_actuals();
+	set_pc(get_pc() + 1);
+}
+
+void execute_funcstart(const avm_instruction *instruction) {
+
+	avm_binary *binary;
+	int userfunc_index;
+	int local_size;
+
+	assert(instruction != NULL);
+	assert(instruction->result.type == userfunc_a);
+
+	binary = get_program_binary();
+	assert(binary != NULL);
+
+	userfunc_index = (int) instruction->result.val;
+	assert(userfunc_index >= 0);
+	assert(userfunc_index < binary->userfunc_count);
+
+	local_size = binary->userfuncs[userfunc_index].localSize;
+	assert(local_size >= 0);
+
+	set_topsp(get_top());
+	set_top(get_top() - local_size);
+	reset_total_actuals();
+	set_pc(get_pc() + 1);
+}
+
+void execute_funcend(const avm_instruction *instruction) {
+
+	int old_top;
+	int old_topsp;
+	int saved_top;
+	int saved_topsp;
+	int saved_pc;
+	int saved_actuals;
+	int i;
+	int function_stack;
+
+	old_top = get_top();
+	old_topsp = get_topsp();
+
+	assert(old_top >= 0);
+	assert(old_topsp >= 0);
+	assert(old_topsp < STACK_SIZE);
+
+	saved_topsp = get_env_value(old_topsp, SAVEDTOPSP_OFFSET);
+	saved_top = get_env_value(old_topsp, SAVEDTOP_OFFSET);
+	saved_pc = get_env_value(old_topsp, SAVEDPC_OFFSET);
+	saved_actuals = get_env_value(old_topsp, NUMACTUALS_OFFSET);
+
+	assert(saved_actuals >= 0);
+	
+	function_stack = old_topsp + STACKENV_SIZE + saved_actuals;
+	assert(function_stack >= 0);
+	assert(function_stack < STACK_SIZE);
+
+	for(i = old_top + 1; i <= function_stack; i++)
+		clear_memcell(&stack[i]);
+
+	set_top(saved_top);
+	set_topsp(saved_topsp);
+	reset_total_actuals();
+	set_pc(saved_pc);
 }
 
 void execute_nop(const avm_instruction *instruction) {
