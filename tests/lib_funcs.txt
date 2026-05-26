@@ -1,0 +1,16 @@
+function multiply(a, b, c) {
+	x = 1;
+	for(i = 0; i < totalarguments(); i++) {
+		x = x * argument(i);
+		print(argument(i), "\n");
+	}
+
+	return x;
+}
+
+print("2 * 3 * 5 = ", multiply(2, 3, 5), "\n");
+
+print("typeof(foo) = ", typeof(foo), "\n");
+print("typeof(i) = ", typeof(i), "\n");
+print("typeof(print) = ", typeof(print), "\n");
+

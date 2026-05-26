@@ -130,7 +130,7 @@ void libfunc_totalarguments() {
 	retval->data.numVal = get_env_value(caller_topsp, NUMACTUALS_OFFSET);
 }
 
-void libfunc_argument(void) {
+void libfunc_argument() {
 	
 	avm_memcell *retval;
 	avm_memcell *index_memcell;
@@ -163,7 +163,7 @@ void libfunc_argument(void) {
 
 	index = (int) index_memcell->data.numVal;
 	caller_total_actuals = get_env_value(caller_topsp, NUMACTUALS_OFFSET);
-
+	
 	if(index < 0 || index >= caller_total_actuals) {
 		retval->type = nil_m;
 		return;

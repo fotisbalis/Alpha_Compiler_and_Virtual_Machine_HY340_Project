@@ -1118,11 +1118,11 @@ int main(int argc, char **argv) {
 
     	printf("Parsing finished.\n");
 	
-	print_errors();
-	
-	SymTable_print(sym_table);
+	if(has_errors())
+		print_errors();
+	else {
+		SymTable_print(sym_table);
 
-	if(!has_errors()) {
 		FILE *quad_file = fopen("quads.txt", "w");
         	assert(quad_file);
 
