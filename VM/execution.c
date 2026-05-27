@@ -4,7 +4,6 @@
 
 #include "execution.h"
 
-static void execute_unsupported(const avm_instruction *instruction);
 static void execute_arithmetic(const avm_instruction *instruction, int opcode);
 static void execute_relational(const avm_instruction *instruction, int opcode);
 
@@ -30,9 +29,9 @@ static execute_func_t execute_dispatch[] = {
 	execute_pusharg,
 	execute_funcstart,
 	execute_funcend,
-	execute_unsupported,
-	execute_unsupported,
-	execute_unsupported,
+	execute_newtable,
+	execute_tablegetelem,
+	execute_tablesetelem,
 	execute_nop
 };
 
@@ -46,7 +45,7 @@ void execute_cycle() {
 	while(!get_execution_finished()) {
 		if(get_pc() < 0 || get_pc() >= binary->instruction_count) {
 			set_execution_finished(True);
-			break;
+			return;
 		}
 
 		execute_current_instruction();
@@ -289,7 +288,105 @@ void execute_nop(const avm_instruction *instruction) {
 	set_pc(get_pc() + 1);
 }
 
-static void execute_unsupported(const avm_instruction *instruction) {
+void execute_newtable(const avm_instruction *instruction) {
+	avm_memcell *left_memcell;
+	avm_table *table;
+
+	assert(instruction != NULL);
+
+	left_memcell = translate_operand(&instruction->result, NULL);
+	assert(left_memcell != NULL);
+
+	clear_memcell(left_memcell);
+
+	table = create_table();
+	assert(table != NULL);
+
+	left_memcell->type = table_m;
+	left_memcell->data.tableVal = table;
+	inc_table_refcounter(table);
+
+	set_pc(get_pc() + 1);
+}
+
+void execute_tablegetelem(const avm_instruction *instruction) {
+	avm_memcell *result_memcell;
+	avm_memcell *table_memcell;
+	avm_memcell *index_memcell;
+	avm_memcell *value_memcell;
+
+	assert(instruction != NULL);
+
+	result_memcell = translate_operand(&instruction->result, NULL);
+	table_memcell = translate_operand(&instruction->arg1, get_ax_register());
+	index_memcell = translate_operand(&instruction->arg2, get_bx_register());
+
+	assert(result_memcell != NULL);
+	assert(table_memcell != NULL);
+	assert(index_memcell != NULL);
+
+	if(table_memcell->type != table_m) {
+		runtime_error("tablegetelem on non-table value");
+		return;
+	}
+
+	if(index_memcell->type == nil_m || index_memcell->type == undef_m) {
+		runtime_error("invalid table index");
+		return;
+	}
+
+	if(index_memcell->type != string_m && index_memcell->type != number_m) {
+		runtime_error("unsupported table index type");
+		return;
+	}
+
+	value_memcell = get_table_element(table_memcell->data.tableVal, index_memcell);
+
+	if(value_memcell == NULL) {
+		clear_memcell(result_memcell);
+		result_memcell->type = nil_m;
+	}
+	else
+		assign_memcell(result_memcell, value_memcell);
+
+	set_pc(get_pc() + 1);
+}
+
+void execute_tablesetelem(const avm_instruction *instruction) {
+	avm_memcell *table_memcell;
+	avm_memcell *index_memcell;
+	avm_memcell *value_memcell;
+
+	assert(instruction != NULL);
+
+	table_memcell = translate_operand(&instruction->result, NULL);
+	index_memcell = translate_operand(&instruction->arg1, get_ax_register());
+	value_memcell = translate_operand(&instruction->arg2, get_bx_register());
+
+	assert(table_memcell != NULL);
+	assert(index_memcell != NULL);
+	assert(value_memcell != NULL);
+
+	if(table_memcell->type != table_m) {
+		runtime_error("tablesetelem on non-table value");
+		return;
+	}
+
+	if(index_memcell->type == nil_m || index_memcell->type == undef_m) {
+		runtime_error("invalid table index");
+		return;
+	}
+
+	if(index_memcell->type != string_m && index_memcell->type != number_m) {
+		runtime_error("unsupported table index type");
+		return;
+	}
+
+	set_table_element(table_memcell->data.tableVal, index_memcell, value_memcell);
+	set_pc(get_pc() + 1);
+}
+
+void execute_unsupported(const avm_instruction *instruction) {
 	runtime_error("unsupported instruction");
 }
 
@@ -320,12 +417,15 @@ static void execute_arithmetic(const avm_instruction *instruction, int opcode) {
 		case add_v:
 			result = right_memcell_1->data.numVal + right_memcell_2->data.numVal;
 			break;
+
 		case sub_v:
 			result = right_memcell_1->data.numVal - right_memcell_2->data.numVal;
 			break;
+
 		case mul_v:
 			result = right_memcell_1->data.numVal * right_memcell_2->data.numVal;
 			break;
+
 		case div_v:
 			if(right_memcell_2->data.numVal == 0) {
 				runtime_error("division by zero");
@@ -334,6 +434,7 @@ static void execute_arithmetic(const avm_instruction *instruction, int opcode) {
 
 			result = right_memcell_1->data.numVal / right_memcell_2->data.numVal;
 			break;
+
 		case mod_v:
 			if(right_memcell_2->data.numVal == 0) {
 				runtime_error("modulo by zero");
@@ -342,6 +443,7 @@ static void execute_arithmetic(const avm_instruction *instruction, int opcode) {
 
 			result = remainder(right_memcell_1->data.numVal, right_memcell_2->data.numVal);
 			break;
+
 		default:
 			assert(0);
 	}

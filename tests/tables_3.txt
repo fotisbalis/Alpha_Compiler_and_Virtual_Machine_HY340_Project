@@ -1,5 +1,8 @@
-x = t.a;
-y = t[a];
-z = t.a.b;
-t.a = 5;
-t[x] = y;
+t = [];
+t[0] = 5;
+print(t[0], "\n");
+t["x"] = 7;
+print(t["x"], "\n");
+print(t[1], "\n");
+t[0] = nil;
+print(t[0], "\n");

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "memcell.h"
+#include "table.h"
 
 avm_memcell *stack = NULL;
 
@@ -57,6 +58,10 @@ void clear_memcell(avm_memcell *memcell) {
 		free(memcell->data.libfuncVal);
 		memcell->data.libfuncVal = NULL;
 	}
+	else if(memcell->type == table_m && memcell->data.tableVal != NULL) {
+		dec_table_refcounter(memcell->data.tableVal);
+		memcell->data.tableVal = NULL;
+	}
 
 	memcell->type = undef_m;
 }
@@ -88,6 +93,8 @@ void copy_memcell(avm_memcell *left_memcell, avm_memcell *right_memcell) {
 
 		case table_m:
                         left_memcell->data.tableVal = right_memcell->data.tableVal;
+			if(left_memcell->data.tableVal != NULL)
+				inc_table_refcounter(left_memcell->data.tableVal);
                         break;
 
 		case userfunc_m:

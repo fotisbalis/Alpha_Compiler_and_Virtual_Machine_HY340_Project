@@ -1,3 +1,4 @@
 tbl = [];
 tbl["z"] = 3;
 
+print(tbl["z"], "\n");

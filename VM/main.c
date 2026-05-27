@@ -16,9 +16,10 @@ int main(int argc, char **argv) {
 
 	binary = binary_load_from_path(argv[1]);
 	initialize_avm_state(binary);
+	
 	execute_cycle();
 
-	fprintf(stdout, "Execution finished.\n");
+	fprintf(stdout, "\nExecution finished.\n");
 	print_globals(stdout);
 
 	reset_avm_state();

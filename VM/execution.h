@@ -3,6 +3,7 @@
 
 #include "avm_utils.h"
 #include "lib_func.h"
+#include "table.h"
 
 typedef void (*execute_func_t)(const avm_instruction *instruction);
 
@@ -29,6 +30,11 @@ void execute_pusharg(const avm_instruction *instruction);
 void execute_funcstart(const avm_instruction *instruction);
 void execute_funcend(const avm_instruction *instruction);
 
+void execute_newtable(const avm_instruction *instruction);
+void execute_tablesetelem(const avm_instruction *instruction);
+void execute_tablegetelem(const avm_instruction *instruction);
+
 void execute_nop(const avm_instruction *instruction);
+void execute_unsupported(const avm_instruction *instruction);
 
 #endif
