@@ -7,6 +7,8 @@ parser
 quads.txt
 instructions.txt
 alpha.abc
+symbol_table.txt
+syntax_rules.txt
 alpha_compiler
 alpha_vm
 *.o
