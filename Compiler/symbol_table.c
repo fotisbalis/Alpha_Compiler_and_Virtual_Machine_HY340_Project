@@ -186,17 +186,25 @@ void SymTable_hide_scope(SymTable_T oSymTable, int scope){
 void SymTable_print(SymTable_T oSymTable){
 	node *n;
 	int i, j;
+	FILE *output_file;
+
+	assert(oSymTable != NULL);
+
+	output_file = fopen("symbol_table.txt", "w");
+	assert(output_file != NULL);
 
 	for(i = 0; i <= max_scope; i++) {
-		printf("\n--------- scope #%d ---------\n", i);
+		fprintf(output_file, "\n--------- scope #%d ---------\n", i);
 		
     		for(j = 0; j < HASH_SIZE; j++) {
         		for(n = oSymTable->buckets[j]; n != NULL; n = n->next) {
 				Symbol *s = n->value;
 
 				if(s->scope == i)
-            				printf("\"%s\" [%s]  (line %d) (scope %d)\n", s->name, s->type, s->line, s->scope);
+            				fprintf(output_file, "\"%s\" [%s]  (line %d) (scope %d)\n", s->name, s->type, s->line, s->scope);
 			}
 		}
 	}
+
+	fclose(output_file);
 }

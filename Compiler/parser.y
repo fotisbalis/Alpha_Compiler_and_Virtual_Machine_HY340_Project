@@ -27,10 +27,11 @@
 
 extern FILE *yyin;
 extern int alpha_yylex(Token *token);
+extern int yylineno;
 Token t;
 
 SymTable_T sym_table;
-int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100], function_started = 0, anonymous_function_counter = 0;
+int current_scope = 0, loop_depth = -1, function_depth = -1, function_scopes[100], anonymous_function_counter = 0;
 Symbol* current_lvalue = NULL; 
 
 int yylex(void) {
@@ -128,6 +129,7 @@ statements:
 
 stmt:
 	expr SEMI_COLON {
+		emit_bool_expr($1, sym_table, current_scope, t.line);
 		$$ = create_stmt();
 		print_reduce("stmt", "expr SEMI_COLON"); 
 	}
@@ -727,7 +729,6 @@ funcstart:
 
                         function_depth++;
                         function_scopes[function_depth] = current_scope;
-                        function_started = 1;
                 }
 
                 current_scope++;
@@ -751,7 +752,6 @@ funcstart:
 
                         function_depth++;
                         function_scopes[function_depth] = current_scope;
-                        function_started = 1;
                 }
 
                 current_scope++;
@@ -781,7 +781,7 @@ funcdef:
 	LEFT_BRACE statements RIGHT_BRACE {
 		SymTable_hide_scope(sym_table, current_scope);
 
-		if(function_started == 1){
+		if($3 != NULL && $3->sym != NULL){
 			assert($3 != NULL);
 			assert($3->sym != NULL);
 			$3->sym->localSize = current_scope_offset();
@@ -792,7 +792,6 @@ funcdef:
 			fill_pending_label($1, get_quad_count());		
 
 			function_depth--;
-			function_started = 0;
 		}
 
 		exit_scope_space();
@@ -1091,7 +1090,9 @@ int main(int argc, char **argv) {
 	yyin = fopen(argv[1], "r");
 	assert(yyin);
 
-	printf("Parsing started.\n");
+	FILE *syntax_rules_file = fopen("syntax_rules.txt", "w");
+	assert(syntax_rules_file != NULL);
+	fclose(syntax_rules_file);
 
 	sym_table = SymTable_create();
 
@@ -1115,13 +1116,13 @@ int main(int argc, char **argv) {
 		free_quads();
         	return 1;
     	}	
-
-    	printf("Parsing finished.\n");
 	
+	SymTable_print(sym_table);
+
 	if(has_errors())
 		print_errors();
 	else {
-		SymTable_print(sym_table);
+		printf("Compilation completed successfully.\n");
 
 		FILE *quad_file = fopen("quads.txt", "w");
         	assert(quad_file);
@@ -1157,5 +1158,5 @@ int main(int argc, char **argv) {
 }
 
 void yyerror(const char *s) {
-	fprintf(stderr, "Parse error: %s\n", s);
+	fprintf(stderr, "ERROR: syntax error at line %d\n", yylineno);
 }

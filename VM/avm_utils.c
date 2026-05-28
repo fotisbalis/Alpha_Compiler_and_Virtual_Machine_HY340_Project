@@ -11,7 +11,7 @@ static avm_memcell *translate_formal_operand(const avm_operand *operand);
 void runtime_error(const char *message) {
 	assert(message != NULL);
 
-	fprintf(stderr, "Runtime Error: %s\n", message);
+	fprintf(stderr, "RUNTIME ERROR: %s\n", message);
 	set_execution_finished(True);
 }
 

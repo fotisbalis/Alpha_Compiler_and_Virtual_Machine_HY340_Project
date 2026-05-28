@@ -12,7 +12,16 @@
 static int tmp_counter = 0;
 
 void print_reduce(char *left, char* right){
-        printf("%s -> %s\n", left, right);
+	FILE *output_file;
+
+	assert(left != NULL);
+	assert(right != NULL);
+
+	output_file = fopen("syntax_rules.txt", "a");
+	assert(output_file != NULL);
+
+	fprintf(output_file, "%s -> %s\n", left, right);
+	fclose(output_file);
 }
 
 Symbol* check_for_lib_func(SymTable_T oSymTable, char *name){
@@ -85,9 +94,14 @@ Expr* emit_bool_expr(Expr *expr, SymTable_T sym_table, int current_scope, int li
 Expr* handle_comparison_quad(opcode op, Expr *arg1, Expr *arg2, SymTable_T sym_table, int current_scope, int line){
 
 	Expr *expr = create_expr(boolexpr);
+	Expr *left;
+	Expr *right;
+
+	left = emit_bool_expr(arg1, sym_table, current_scope, line);
+	right = emit_bool_expr(arg2, sym_table, current_scope, line);
 
 	int if_quadID = get_quad_count();
-	new_quad(op, NULL, arg1, arg2, NO_LABEL);
+	new_quad(op, NULL, left, right, NO_LABEL);
 
 	int jump_quadID = get_quad_count();
 	new_quad(_jump, NULL, NULL, NULL, NO_LABEL);

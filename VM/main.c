@@ -19,9 +19,6 @@ int main(int argc, char **argv) {
 	
 	execute_cycle();
 
-	fprintf(stdout, "\nExecution finished.\n");
-	print_globals(stdout);
-
 	reset_avm_state();
 	free_stack();
 	binary_free(binary);

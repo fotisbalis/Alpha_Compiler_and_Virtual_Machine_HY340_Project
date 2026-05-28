@@ -1,0 +1,6 @@
+tbl = [1];
+print(tbl[0], "\n");
+
+tbl = 5;
+print(tbl[0], "\n");
+print(tbl, "\n");

@@ -289,6 +289,7 @@ void execute_nop(const avm_instruction *instruction) {
 }
 
 void execute_newtable(const avm_instruction *instruction) {
+	
 	avm_memcell *left_memcell;
 	avm_table *table;
 
@@ -310,6 +311,7 @@ void execute_newtable(const avm_instruction *instruction) {
 }
 
 void execute_tablegetelem(const avm_instruction *instruction) {
+	
 	avm_memcell *result_memcell;
 	avm_memcell *table_memcell;
 	avm_memcell *index_memcell;
@@ -325,20 +327,15 @@ void execute_tablegetelem(const avm_instruction *instruction) {
 	assert(table_memcell != NULL);
 	assert(index_memcell != NULL);
 
-	if(table_memcell->type != table_m) {
-		runtime_error("tablegetelem on non-table value");
-		return;
-	}
+        if(table_memcell->type != table_m){
+                runtime_error("non table item used as table");
+                return;
+        }
 
-	if(index_memcell->type == nil_m || index_memcell->type == undef_m) {
-		runtime_error("invalid table index");
-		return;
-	}
-
-	if(index_memcell->type != string_m && index_memcell->type != number_m) {
-		runtime_error("unsupported table index type");
-		return;
-	}
+        if(index_memcell->type == nil_m || index_memcell->type == undef_m || (index_memcell->type != string_m && index_memcell->type != number_m)) {
+                runtime_error("invalid table index");
+                return;
+        }
 
 	value_memcell = get_table_element(table_memcell->data.tableVal, index_memcell);
 
@@ -353,6 +350,7 @@ void execute_tablegetelem(const avm_instruction *instruction) {
 }
 
 void execute_tablesetelem(const avm_instruction *instruction) {
+	
 	avm_memcell *table_memcell;
 	avm_memcell *index_memcell;
 	avm_memcell *value_memcell;
@@ -367,18 +365,13 @@ void execute_tablesetelem(const avm_instruction *instruction) {
 	assert(index_memcell != NULL);
 	assert(value_memcell != NULL);
 
-	if(table_memcell->type != table_m) {
-		runtime_error("tablesetelem on non-table value");
-		return;
-	}
+	if(table_memcell->type != table_m){
+                runtime_error("non table item used as table");
+                return;
+        }
 
-	if(index_memcell->type == nil_m || index_memcell->type == undef_m) {
+	if(index_memcell->type == nil_m || index_memcell->type == undef_m || (index_memcell->type != string_m && index_memcell->type != number_m)) {
 		runtime_error("invalid table index");
-		return;
-	}
-
-	if(index_memcell->type != string_m && index_memcell->type != number_m) {
-		runtime_error("unsupported table index type");
 		return;
 	}
 

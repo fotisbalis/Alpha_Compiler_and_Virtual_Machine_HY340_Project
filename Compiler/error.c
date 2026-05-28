@@ -46,8 +46,6 @@ void print_errors(){
 
 	Error* err;
 
-	printf("\n--------- Errors ---------\n");
-
 	for(err = head; err != NULL; err = err->next)
 		printf("%s\n", err->message);
 }

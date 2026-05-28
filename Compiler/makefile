@@ -10,6 +10,8 @@ clean:
 	rm -f lex.yy.c
 	rm -f parser.tab.c
 	rm -f parser.tab.h
+	rm -f ../symbol_table.txt
+	rm -f ../syntax_rules.txt
 	rm -f ../quads.txt
 	rm -f ../instructions.txt
 	rm -f ../alpha.abc

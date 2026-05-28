@@ -131,9 +131,7 @@ void assign_memcell(avm_memcell *left_memcell, avm_memcell *right_memcell) {
 	if(left_memcell == right_memcell)
 		return;
 
-	if(left_memcell->type == table_m &&
-	   right_memcell->type == table_m &&
-	   left_memcell->data.tableVal == right_memcell->data.tableVal)
+	if(left_memcell->type == table_m && right_memcell->type == table_m && left_memcell->data.tableVal == right_memcell->data.tableVal)
 		return;
 
 	clear_memcell(left_memcell);
