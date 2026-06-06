@@ -1,0 +1,6 @@
+println(strtonum("1821.22"));
+println(strtonum("foo"));
+println(sqrt(25));
+println(sqrt(-1));
+println(cos(90));
+println(sin(270));

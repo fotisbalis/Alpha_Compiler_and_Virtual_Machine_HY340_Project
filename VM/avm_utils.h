@@ -9,4 +9,6 @@ avm_memcell *translate_operand(const avm_operand *operand, avm_memcell *reg);
 
 void runtime_error(const char *message);
 
+void runtime_warning(const char *message);
+
 #endif

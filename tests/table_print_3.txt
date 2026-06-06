@@ -1,0 +1,6 @@
+t = [];
+t[0] = 3.14;
+t[1] = true;
+t[2] = nil;
+t[3] = print;
+print(t, "\n");

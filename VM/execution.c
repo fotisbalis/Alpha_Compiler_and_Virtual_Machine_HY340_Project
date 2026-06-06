@@ -35,30 +35,10 @@ static execute_func_t execute_dispatch[] = {
 	execute_nop
 };
 
-void execute_cycle() {
-
-	avm_binary *binary;
-
-	binary = get_program_binary();
-	assert(binary != NULL);
-
-	while(!get_execution_finished()) {
-		if(get_pc() < 0 || get_pc() >= binary->instruction_count) {
-			set_execution_finished(True);
-			return;
-		}
-
-		execute_current_instruction();
-	}
-}
-
-void execute_current_instruction() {
+void execute_current_instruction(avm_binary *binary) {
 	
-	avm_binary *binary;
 	const avm_instruction *instruction;
 
-	binary = get_program_binary();
-	
 	assert(binary != NULL);
 	assert(get_pc() >= 0);
 	assert(get_pc() < binary->instruction_count);

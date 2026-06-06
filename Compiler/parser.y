@@ -1098,6 +1098,7 @@ int main(int argc, char **argv) {
 
 	/* library functions */
 	SymTable_put(sym_table, Symbol_create("print", "library function", 0, 0, 1, 0));
+	SymTable_put(sym_table, Symbol_create("println", "library function", 0, 0, 1, 0));
 	SymTable_put(sym_table, Symbol_create("input", "library function", 0, 0, 1, 0));
 	SymTable_put(sym_table, Symbol_create("objectmemberkeys", "library function", 0, 0, 1, 0));
         SymTable_put(sym_table, Symbol_create("objecttotalmembers", "library function", 0, 0, 1, 0));

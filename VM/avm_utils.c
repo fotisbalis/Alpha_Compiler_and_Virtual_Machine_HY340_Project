@@ -12,7 +12,14 @@ void runtime_error(const char *message) {
 	assert(message != NULL);
 
 	fprintf(stderr, "RUNTIME ERROR: %s\n", message);
+	
 	set_execution_finished(True);
+}
+
+void runtime_warning(const char *message) {
+	assert(message != NULL);
+
+	fprintf(stderr, "RUNTIME WARNING: %s\n", message);
 }
 
 avm_memcell *translate_operand(const avm_operand *operand, avm_memcell *reg) {

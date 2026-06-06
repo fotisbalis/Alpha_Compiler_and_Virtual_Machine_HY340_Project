@@ -28,7 +28,7 @@ void set_top(int new_top);
 
 int get_topsp();
 void set_topsp(int new_topsp);
-int get_global_topsp(void);
+int get_global_topsp();
 
 /* boolean */
 int get_execution_finished();

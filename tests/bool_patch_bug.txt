@@ -1,1 +1,15 @@
-a > b or c < d and e >= f or g <= h and not i == j or not k != l;
+a = 1;
+b = 5;
+c = a;
+d = b;
+e = -c;
+f = e;
+g = a;
+h = -a;
+i = -1;
+j = 5;
+k = a;
+l = not a;
+
+print(a > b or c < d and e >= f or g <= h and not i == j or not k != l);
+print("\n");

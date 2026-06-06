@@ -7,8 +7,7 @@
 
 typedef void (*execute_func_t)(const avm_instruction *instruction);
 
-void execute_cycle();
-void execute_current_instruction();
+void execute_current_instruction(avm_binary *binary);
 
 void execute_assign(const avm_instruction *instruction);
 void execute_add(const avm_instruction *instruction);
@@ -35,6 +34,7 @@ void execute_tablesetelem(const avm_instruction *instruction);
 void execute_tablegetelem(const avm_instruction *instruction);
 
 void execute_nop(const avm_instruction *instruction);
+
 void execute_unsupported(const avm_instruction *instruction);
 
 #endif
