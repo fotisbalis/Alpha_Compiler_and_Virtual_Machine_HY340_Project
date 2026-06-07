@@ -180,7 +180,7 @@ void execute_call(const avm_instruction *instruction) {
 		call_library_function(function_memcell->data.libfuncVal);
 	}
 	else
-		assert(0);
+		runtime_error("undefined function called");
 }
 
 void execute_pusharg(const avm_instruction *instruction) {
@@ -360,7 +360,7 @@ void execute_tablesetelem(const avm_instruction *instruction) {
 }
 
 void execute_unsupported(const avm_instruction *instruction) {
-	runtime_error("unsupported instruction");
+	assert(0);
 }
 
 static void execute_arithmetic(const avm_instruction *instruction, int opcode) {

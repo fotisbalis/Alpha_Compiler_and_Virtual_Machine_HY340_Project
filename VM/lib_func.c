@@ -7,20 +7,8 @@
 #include "headers/lib_func.h"
 
 static int get_library_function_id(const char *name);
-static int get_current_total_actuals();
-static avm_memcell *get_actual(int index);
-
-static int get_caller_topsp();
-static void set_retval_nil();
-
-static void restore_after_libfunc_call();
-
 static void print_actual(avm_memcell *actual);
 static void print_table(avm_memcell *actual);
-static avm_table *get_table_argument(const char *function_name);
-static void set_retval_table(avm_table *table);
-static void set_number_memcell(avm_memcell *memcell, double value);
-static void set_string_memcell(avm_memcell *memcell, const char *value);
 
 void call_library_function(const char *name) {
 	
@@ -107,8 +95,21 @@ void libfunc_print() {
 	set_retval_nil();
 }
 
+void libfunc_println() {
+
+	int i, total_actuals;
+
+        total_actuals = get_current_total_actuals();
+
+        for(i = 0; i < total_actuals; i++)
+                print_actual(get_actual(i));
+	printf("\n");
+
+        set_retval_nil();
+}
+
 static void print_actual(avm_memcell *actual) {
-        assert(actual);
+        assert(actual != NULL);
 
         switch(actual->type) {
                 case bool_m:
@@ -141,24 +142,29 @@ static void print_actual(avm_memcell *actual) {
 }
 
 static void print_table(avm_memcell *actual) {
-
-        assert(actual);
-        assert(actual->type == table_m && actual->data.tableVal != NULL);
-
-        avm_table *table = actual->data.tableVal;
-        int i, first = True;
+        
+	avm_table *table;
         avm_table_bucket *bucket;
+        int i;
+        /* bool */ int first;
+
+        assert(actual != NULL);
+        assert(actual->type == table_m);
+        assert(actual->data.tableVal != NULL);
+
+        table = actual->data.tableVal;
+        first = True;
 
         printf("[ ");
         for(i = 0; i < AVM_TABLE_HASHSIZE; i++) {
-
-                for(bucket = table->numberIndexed[i]; bucket != NULL; bucket = bucket->next) {
+                
+		for(bucket = table->numberIndexed[i]; bucket != NULL; bucket = bucket->next) {
                         if(!first) printf(", ");
 
                         printf("%.3f : ", bucket->key.data.numVal);
                         print_actual(&bucket->value);
-
-                        first = False;
+                        
+			first = False;
                 }
 
                 for(bucket = table->stringIndexed[i]; bucket != NULL; bucket = bucket->next) {
@@ -166,24 +172,11 @@ static void print_table(avm_memcell *actual) {
 
                         printf("%s : ", bucket->key.data.strVal);
                         print_actual(&bucket->value);
-
-                        first = False;
+                        
+			first = False;
                 }
         }
         printf(" ]");
-}
-
-void libfunc_println() {
-
-	int i, total_actuals;
-
-        total_actuals = get_current_total_actuals();
-
-        for(i = 0; i < total_actuals; i++)
-                print_actual(get_actual(i));
-	printf("\n");
-
-        set_retval_nil();
 }
 
 void libfunc_input() {
@@ -349,7 +342,7 @@ void libfunc_argument() {
 	caller_total_actuals = get_env_value(caller_topsp, NUMACTUALS_OFFSET);
 	
 	if(index >= caller_total_actuals) {
-		sprintf(error, "index %d given to argument exceeds function's arguments", index);
+		sprintf(error, "index %d given to argument() exceeds function's arguments", index);
 		runtime_error(error);
 		return;
 	}
@@ -365,12 +358,22 @@ void libfunc_objectmemberkeys() {
 	
 	avm_memcell key_memcell;
 	avm_memcell value_memcell;
+	avm_memcell *actual;
 	avm_table *source_table;
 	avm_table *result_table;
 	avm_table_bucket *bucket;
 	int i, index;
 
-	source_table = get_table_argument("objectmemberkeys()");
+	if(get_current_total_actuals() != 1)
+		runtime_error("objectmemberkeys() expects exactly one argument");
+	
+	actual = get_actual(0);
+	assert(actual != NULL);
+
+	if(actual->type != table_m || actual->data.tableVal == NULL)
+		runtime_error("objectmemberkeys() expects a table argument");
+
+	source_table = actual->data.tableVal;
 	if(source_table == NULL)
 		return;
 
@@ -413,8 +416,18 @@ void libfunc_objecttotalmembers() {
 	
 	avm_memcell *retval;
 	avm_table *table;
+	avm_memcell *actual;
 
-	table = get_table_argument("objecttotalmembers()");
+	if(get_current_total_actuals() != 1)
+                runtime_error("objecttotalmembers() expects exactly one argument");
+
+        actual = get_actual(0);
+        assert(actual != NULL);
+
+        if(actual->type != table_m || actual->data.tableVal == NULL)
+                runtime_error("objecttotalmembers() expects a table argument");
+
+        table = actual->data.tableVal;
 	if(table == NULL)
 		return;
 
@@ -428,12 +441,22 @@ void libfunc_objectcopy() {
 	
 	avm_memcell key_memcell;
 	avm_memcell value_memcell;
+	avm_memcell *actual;
 	avm_table *source_table;
 	avm_table *result_table;
 	avm_table_bucket *bucket;
 	int i;
 
-	source_table = get_table_argument("objectcopy()");
+	if(get_current_total_actuals() != 1)
+                runtime_error("objectcopy() expects exactly one argument");
+
+        actual = get_actual(0);
+        assert(actual != NULL);
+
+        if(actual->type != table_m || actual->data.tableVal == NULL)
+                runtime_error("objectcopy() expects a table argument");
+
+        source_table = actual->data.tableVal;
 	if(source_table == NULL)
 		return;
 
@@ -584,10 +607,6 @@ void libfunc_sin() {
 	retval->data.numVal = sin(rad);
 }
 
-static int get_current_total_actuals() {
-	return get_env_value(get_topsp(), NUMACTUALS_OFFSET);
-}
-
 static int get_library_function_id(const char *name) {
 	assert(name != NULL);
 
@@ -631,119 +650,4 @@ static int get_library_function_id(const char *name) {
 		return LIBFUNC_SIN;
 
 	return LIBFUNC_UNSUPPORTED;
-}
-
-static avm_memcell *get_actual(int index) {
-	
-	int total_actuals;
-	int stack_index;
-
-	total_actuals = get_current_total_actuals();
-	assert(index >= 0);
-	assert(index < total_actuals);
-
-	stack_index = get_topsp() + STACKENV_SIZE + 1 + index;
-	assert(stack_index >= 0);
-	assert(stack_index < STACK_SIZE);
-
-	return &stack[stack_index];
-}
-
-static int get_caller_topsp() {
-	return get_env_value(get_topsp(), SAVEDTOPSP_OFFSET);
-}
-
-static avm_table *get_table_argument(const char *function_name) {
-	
-	avm_memcell *actual;
-	char error[200];
-
-	assert(function_name != NULL);
-
-	if(get_current_total_actuals() != 1) {
-		sprintf(error, "%s expects exactly one argument", function_name);
-		runtime_error(error);
-		return NULL;
-	}
-
-	actual = get_actual(0);
-	assert(actual != NULL);
-
-	if(actual->type != table_m || actual->data.tableVal == NULL) {
-		sprintf(error, "%s expects a table argument", function_name);
-		runtime_error(error);
-		return NULL;
-	}
-
-	return actual->data.tableVal;
-}
-
-static void set_retval_table(avm_table *table) {
-	avm_memcell *retval;
-
-	assert(table != NULL);
-
-	retval = get_retval_register();
-	reset_register(retval);
-	retval->type = table_m;
-	retval->data.tableVal = table;
-	inc_table_refcounter(table);
-}
-
-static void set_number_memcell(avm_memcell *memcell, double value) {
-	assert(memcell != NULL);
-
-	clear_memcell(memcell);
-	memcell->type = number_m;
-	memcell->data.numVal = value;
-}
-
-static void set_string_memcell(avm_memcell *memcell, const char *value) {
-	assert(memcell != NULL);
-	assert(value != NULL);
-
-	clear_memcell(memcell);
-	memcell->type = string_m;
-	memcell->data.strVal = strdup(value);
-	assert(memcell->data.strVal != NULL);
-}
-
-static void set_retval_nil() {
-	avm_memcell *retval;
-
-	retval = get_retval_register();
-	reset_register(retval);
-	retval->type = nil_m;
-}
-
-static void restore_after_libfunc_call() {
-	
-	int old_top;
-	int old_topsp;
-	int saved_top;
-	int saved_topsp;
-	int saved_pc;
-	int saved_actuals;
-	int i;
-	int upper_bound;
-
-	old_top = get_top();
-	old_topsp = get_topsp();
-
-	saved_topsp = get_env_value(old_topsp, SAVEDTOPSP_OFFSET);
-	saved_top = get_env_value(old_topsp, SAVEDTOP_OFFSET);
-	saved_pc = get_env_value(old_topsp, SAVEDPC_OFFSET);
-	saved_actuals = get_env_value(old_topsp, NUMACTUALS_OFFSET);
-
-	upper_bound = old_topsp + STACKENV_SIZE + saved_actuals;
-	assert(upper_bound >= 0);
-	assert(upper_bound < STACK_SIZE);
-
-	for(i = old_top + 1; i <= upper_bound; i++)
-		clear_memcell(&stack[i]);
-
-	set_top(saved_top);
-	set_topsp(saved_topsp);
-	reset_total_actuals();
-	set_pc(saved_pc);
 }

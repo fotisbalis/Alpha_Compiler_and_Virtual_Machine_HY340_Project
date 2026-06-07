@@ -5,7 +5,7 @@
 
 #include "avm_types.h"
 
-#define AVM_BINARY_MAGIC 34020026u
+#define AVM_BINARY_MAGIC 340200501u
 
 const char *avm_opcode_to_string(int opcode);
 

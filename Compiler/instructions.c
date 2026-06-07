@@ -5,7 +5,7 @@
 #include "headers/instructions.h"
 #include "headers/const_tables.h"
 
-#define AVM_BINARY_MAGIC 34020026u
+#define AVM_BINARY_MAGIC 340200501u
 
 static int count = 0;
 static int capacity = 0;

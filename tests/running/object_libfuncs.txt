@@ -1,0 +1,17 @@
+t = [];
+t["foo"] = 34;
+t["lala"] = 99;
+t[0] = 7;
+
+println(objecttotalmembers(t));
+
+keys = objectmemberkeys(t);
+println(keys);
+println(objecttotalmembers(keys));
+
+copy = objectcopy(t);
+println(copy);
+
+copy["foo"] = 100;
+println(copy["foo"]);
+println(t["foo"]);

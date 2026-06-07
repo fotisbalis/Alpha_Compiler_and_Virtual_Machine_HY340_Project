@@ -30,4 +30,12 @@ avm_memcell *get_table_element(avm_table *table, avm_memcell *key);
 
 void set_table_element(avm_table *table, avm_memcell *key, avm_memcell *value);
 
+int are_table_keys_equal(const avm_memcell *left_key, const avm_memcell *right_key);
+
+avm_table_bucket *create_bucket(const avm_memcell *key, const avm_memcell *value);
+
+void destroy_bucket_list(avm_table_bucket *bucket);
+
+void delete_bucket(avm_table *table, avm_table_bucket **bucket_head, const avm_memcell *key);
+
 #endif

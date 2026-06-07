@@ -1,0 +1,21 @@
+function buildtable(x, y) {
+	t = [];
+	t["sum"] = x + y;
+	t["prod"] = x * y;
+	return t;
+}
+
+function wraptable(tbl) {
+	w = [];
+	w["inner"] = tbl;
+	w["keys"] = objectmemberkeys(tbl);
+	return w;
+}
+
+base = buildtable(3, 4);
+wrapped = wraptable(base);
+
+println(base);
+println(wrapped);
+println(wrapped["inner"]["sum"]);
+println(wrapped["inner"]["prod"]);

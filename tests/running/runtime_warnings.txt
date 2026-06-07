@@ -1,0 +1,11 @@
+println(totalarguments());
+println(argument(0));
+
+function inspect(a, b) {
+	println(totalarguments());
+	println(argument(0));
+	println(argument(1));
+	return a + b;
+}
+
+println(inspect(10, 20));

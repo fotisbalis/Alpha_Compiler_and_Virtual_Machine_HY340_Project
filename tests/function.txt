@@ -1,6 +1,0 @@
-function f(a, b) {
-    x = a + b;
-    return x;
-    x = 1 - b;
-}
-y = f(1, 3);

@@ -1,18 +1,13 @@
 #include <assert.h>
-#include	 <stdlib.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "headers/table.h"
 
 static int hash_string_key(const char *key);
 static int hash_number_key(double key);
-static avm_table_bucket **select_bucket_array(avm_table *table, const avm_memcell *key);
+
 static int get_bucket_index(const avm_memcell *key);
-static int are_table_keys_equal(const avm_memcell *left_key, const avm_memcell *right_key);
-static avm_table_bucket *find_bucket(avm_table_bucket *bucket, const avm_memcell *key);
-static avm_table_bucket *create_bucket(const avm_memcell *key, const avm_memcell *value);
-static void destroy_bucket_list(avm_table_bucket *bucket);
-static void delete_bucket(avm_table *table, avm_table_bucket **bucket_head, const avm_memcell *key);
 
 avm_table *create_table() {
 
@@ -46,7 +41,7 @@ void destroy_table(avm_table *table) {
 	free(table);
 }
 
-static void destroy_bucket_list(avm_table_bucket *bucket) {
+void destroy_bucket_list(avm_table_bucket *bucket) {
 
         avm_table_bucket *current_bucket;
         avm_table_bucket *next_bucket;
@@ -88,17 +83,21 @@ avm_memcell *get_table_element(avm_table *table, avm_memcell *key) {
 	assert(table != NULL);
 	assert(key != NULL);
 
-	if(key->type != string_m && key->type != number_m)
-		return NULL;
-
-	bucket_array = select_bucket_array(table, key);
-	assert(bucket_array != NULL);
+	if(key->type == string_m)
+                bucket_array = table->stringIndexed;
+	else if(key->type == number_m)
+                bucket_array = table->numberIndexed;
+        else
+                return NULL;
 
 	bucket_index = get_bucket_index(key);
 	assert(bucket_index >= 0);
 	assert(bucket_index < AVM_TABLE_HASHSIZE);
 
-	bucket = find_bucket(bucket_array[bucket_index], key);
+	for(bucket = bucket_array[bucket_index]; bucket != NULL; bucket = bucket->next) {
+                if(are_table_keys_equal(&bucket->key, key))
+                        break;
+        }
 
 	if(bucket == NULL)
 		return NULL;
@@ -117,11 +116,12 @@ void set_table_element(avm_table *table, avm_memcell *key, avm_memcell *value) {
 	assert(key != NULL);
 	assert(value != NULL);
 
-	if(key->type != string_m && key->type != number_m)
+	if(key->type == string_m)
+                bucket_array = table->stringIndexed;
+	else if(key->type == number_m)
+                bucket_array = table->numberIndexed;
+	else
 		return;
-
-	bucket_array = select_bucket_array(table, key);
-	assert(bucket_array != NULL);
 
 	bucket_index = get_bucket_index(key);
 	assert(bucket_index >= 0);
@@ -132,7 +132,10 @@ void set_table_element(avm_table *table, avm_memcell *key, avm_memcell *value) {
 		return;
 	}
 
-	bucket = find_bucket(bucket_array[bucket_index], key);
+	for(bucket = bucket_array[bucket_index]; bucket != NULL; bucket = bucket->next) {
+                if(are_table_keys_equal(&bucket->key, key))
+                        break;
+        }
 
 	if(bucket != NULL) {
 		assign_memcell(&bucket->value, value);
@@ -174,20 +177,6 @@ static int hash_number_key(double key) {
 	return (int) (hash % AVM_TABLE_HASHSIZE);
 }
 
-static avm_table_bucket **select_bucket_array(avm_table *table, const avm_memcell *key) {
-	assert(table != NULL);
-	assert(key != NULL);
-
-	if(key->type == string_m)
-		return table->stringIndexed;
-
-	if(key->type == number_m)
-		return table->numberIndexed;
-
-	assert(0);
-	return NULL;
-}
-
 static int get_bucket_index(const avm_memcell *key) {
 	
 	assert(key != NULL);
@@ -204,15 +193,12 @@ static int get_bucket_index(const avm_memcell *key) {
 	return -1;
 }
 
-static int are_table_keys_equal(const avm_memcell *left_key, const avm_memcell *right_key) {
+int are_table_keys_equal(const avm_memcell *left_key, const avm_memcell *right_key) {
 	
 	assert(left_key != NULL);
 	assert(right_key != NULL);
 
-	if(left_key->type != right_key->type)
-		return False;
-
-	if(left_key->type == string_m) {
+	if(left_key->type == string_m && right_key->type == string_m) {
 		assert(left_key->data.strVal != NULL);
 		assert(right_key->data.strVal != NULL);
 		
@@ -220,24 +206,14 @@ static int are_table_keys_equal(const avm_memcell *left_key, const avm_memcell *
 			return True;
 	}
 
-	if(left_key->type == number_m && left_key->data.numVal == right_key->data.numVal)
-		return True;
+	if(left_key->type == number_m && right_key->type == number_m)
+		if(left_key->data.numVal == right_key->data.numVal)
+			return True;
 
 	return False;
 }
 
-static avm_table_bucket *find_bucket(avm_table_bucket *bucket, const avm_memcell *key) {
-	assert(key != NULL);
-
-	for(; bucket != NULL; bucket = bucket->next) {
-		if(are_table_keys_equal(&bucket->key, key))
-			return bucket;
-	}
-
-	return NULL;
-}
-
-static avm_table_bucket *create_bucket(const avm_memcell *key, const avm_memcell *value) {
+avm_table_bucket *create_bucket(const avm_memcell *key, const avm_memcell *value) {
 	
 	avm_table_bucket *bucket;
 
@@ -259,7 +235,7 @@ static avm_table_bucket *create_bucket(const avm_memcell *key, const avm_memcell
 	return bucket;
 }
 
-static void delete_bucket(avm_table *table, avm_table_bucket **bucket_head, const avm_memcell *key) {
+void delete_bucket(avm_table *table, avm_table_bucket **bucket_head, const avm_memcell *key) {
 	
 	avm_table_bucket *current_bucket;
 	avm_table_bucket *previous_bucket;

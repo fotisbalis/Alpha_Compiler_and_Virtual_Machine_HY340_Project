@@ -1,0 +1,17 @@
+inner = [];
+inner[0] = "alpha";
+inner[1] = false;
+inner[2] = 3.14;
+
+middle = [];
+middle["inner"] = inner;
+middle["flag"] = true;
+
+outer = [];
+outer["middle"] = middle;
+outer["value"] = 42;
+
+println(outer);
+println(outer["middle"]);
+println(outer["middle"]["inner"]);
+println(typeof(outer["middle"]["inner"]));
