@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "symbol_table.h"
+#include "headers/symbol_table.h"
 
 #define HASH_SIZE 509
 

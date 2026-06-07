@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stddef.h>
 
-#include "avm_state.h"
+#include "headers/avm_state.h"
 
 static avm_binary *program_binary = NULL;
 

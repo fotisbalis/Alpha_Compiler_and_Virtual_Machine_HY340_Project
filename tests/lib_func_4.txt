@@ -1,0 +1,7 @@
+t = [];
+inner = [];
+inner[0] = 5;
+t["x"] = inner;
+copy = objectcopy(t);
+println(copy);
+println(copy["x"]);

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "symbol.h"
+#include "headers/symbol.h"
 
 #define True 1
 #define False 0

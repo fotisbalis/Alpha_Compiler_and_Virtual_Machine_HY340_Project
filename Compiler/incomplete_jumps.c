@@ -1,9 +1,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "incomplete_jumps.h"
-#include "instructions.h"
-#include "quad.h"
+#include "headers/incomplete_jumps.h"
+#include "headers/instructions.h"
+#include "headers/quad.h"
 
 #define EXPAND_SIZE 128
 

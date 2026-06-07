@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "token.h"
-#include "pending_labels.h"
-#include "expr.h"
-#include "indexed.h"
-#include "loop_info.h"
-#include "stmt.h"
-#include "callsuffix.h"
+#include "headers/token.h"
+#include "headers/pending_labels.h"
+#include "headers/expr.h"
+#include "headers/indexed.h"
+#include "headers/loop_info.h"
+#include "headers/stmt.h"
+#include "headers/callsuffix.h"
 #include "parser.tab.h"
 
 #define YY_DECL int alpha_yylex(Token *token)

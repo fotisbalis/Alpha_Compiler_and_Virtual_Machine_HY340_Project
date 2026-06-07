@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "instructions.h"
-#include "const_tables.h"
+#include "headers/instructions.h"
+#include "headers/const_tables.h"
 
 #define AVM_BINARY_MAGIC 34020026u
 

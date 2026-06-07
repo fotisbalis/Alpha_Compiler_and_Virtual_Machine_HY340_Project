@@ -11,6 +11,9 @@ enum library_function_id {
 	LIBFUNC_TYPEOF,
 	LIBFUNC_TOTALARGUMENTS,
 	LIBFUNC_ARGUMENT,
+	LIBFUNC_OBJECTMEMBERKEYS,
+	LIBFUNC_OBJECTTOTALMEMBERS,
+	LIBFUNC_OBJECTCOPY,
 	LIBFUNC_STRTONUM,
 	LIBFUNC_SQRT,
 	LIBFUNC_COS,
@@ -26,6 +29,9 @@ void libfunc_input();
 void libfunc_typeof();
 void libfunc_totalarguments();
 void libfunc_argument();
+void libfunc_objectmemberkeys();
+void libfunc_objecttotalmembers();
+void libfunc_objectcopy();
 void libfunc_strtonum();
 void libfunc_sqrt();
 void libfunc_cos();

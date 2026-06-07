@@ -2,7 +2,7 @@
 #include	 <stdlib.h>
 #include <string.h>
 
-#include "table.h"
+#include "headers/table.h"
 
 static int hash_string_key(const char *key);
 static int hash_number_key(double key);

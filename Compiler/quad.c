@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "quad.h"
+#include "headers/quad.h"
 
 #define NO_LABEL -1
 #define NO_TADDRESS -1
@@ -143,5 +143,4 @@ void free_quads(){
 	count = 0;
 	capacity = 0;
 }
-
 

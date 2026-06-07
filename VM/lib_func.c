@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lib_func.h"
+#include "headers/lib_func.h"
 
 static int get_library_function_id(const char *name);
 static int get_current_total_actuals();
@@ -17,6 +17,10 @@ static void restore_after_libfunc_call();
 
 static void print_actual(avm_memcell *actual);
 static void print_table(avm_memcell *actual);
+static avm_table *get_table_argument(const char *function_name);
+static void set_retval_table(avm_table *table);
+static void set_number_memcell(avm_memcell *memcell, double value);
+static void set_string_memcell(avm_memcell *memcell, const char *value);
 
 void call_library_function(const char *name) {
 	
@@ -51,6 +55,18 @@ void call_library_function(const char *name) {
 			libfunc_argument();
 			break;
 
+		case LIBFUNC_OBJECTMEMBERKEYS:
+			libfunc_objectmemberkeys();
+			break;
+
+		case LIBFUNC_OBJECTTOTALMEMBERS:
+			libfunc_objecttotalmembers();
+			break;
+
+		case LIBFUNC_OBJECTCOPY:
+			libfunc_objectcopy();
+			break;
+
 		case LIBFUNC_STRTONUM:
 			libfunc_strtonum();
 			break;
@@ -66,9 +82,9 @@ void call_library_function(const char *name) {
 		case LIBFUNC_SIN:
 			libfunc_sin();
 			break;
-
+		
 		case LIBFUNC_UNSUPPORTED:
-			runtime_error("unsupported library function");
+			assert(0);
 			break;
 
 		default:
@@ -174,30 +190,33 @@ void libfunc_input() {
 
 	avm_memcell *retval;
 	char buffer[4096];
-	int i;
+	int i, length;
 	char *end;
 	double value;
 
 	if(get_current_total_actuals() != 0) {
-		runtime_error("input expects no arguments");
+		runtime_error("input() expects no arguments");
 		return;
 	}
 
 	retval = get_retval_register();
 	reset_register(retval);
 
-	fgets(buffer, sizeof(buffer), stdin);
-
-	if(buffer != NULL) {
-		for(i = 0; i < strlen(buffer); i++) {
+	if(fgets(buffer, sizeof(buffer), stdin)) {
+		length = strlen(buffer);
+		for(i = 0; i < length; i++) {
 			if(buffer[i] == '\n') {
 				buffer[i] = '\0';
 				break;
 			}
 		}
 	}
+	else {
+		retval->type = nil_m;
+                return;
+        }
 
-	if(buffer == NULL || strcmp(buffer, "nil") == 0) {
+	if(strcmp(buffer, "nil") == 0) {
 		retval->type = nil_m;
 		return;
 	}
@@ -211,16 +230,12 @@ void libfunc_input() {
 	}
 
 	value = strtod(buffer, &end);
-	if(*end == '\0') {
+	if(end != buffer && *end == '\0') {
 		retval->type = number_m;
 		retval->data.numVal = value;
 		
 		return;
 	}
-
-	memmove(buffer + 1, buffer, strlen(buffer) + 1);
-	buffer[0] = '\"';
-	strcat(buffer, "\"");
 
 	retval->type = string_m;
 	retval->data.strVal = strdup(buffer);
@@ -234,7 +249,7 @@ void libfunc_typeof() {
 	const char *type_string;
 
 	if(get_current_total_actuals() != 1) {
-		runtime_error("typeof expects exactly one argument");
+		runtime_error("typeof() expects exactly one argument");
 		return;
 	}
 
@@ -303,13 +318,11 @@ void libfunc_argument() {
 	
 	avm_memcell *retval;
 	avm_memcell *index_memcell;
-	int caller_topsp;
-	int index;
-	int caller_total_actuals;
-	int stack_index;
+	int caller_topsp, index, caller_total_actuals, stack_index;
+	char error[100];
 
 	if(get_current_total_actuals() != 1) {
-		runtime_error("argument expects exactly one argument");
+		runtime_error("argument() expects exactly one argument");
 		return;
 	}
 
@@ -327,16 +340,17 @@ void libfunc_argument() {
 	index_memcell = get_actual(0);
 	assert(index_memcell != NULL);
 
-	if(index_memcell->type != number_m) {
-		runtime_error("argument index must be a number");
+	if(index_memcell->type != number_m || index_memcell->data.numVal < 0) {
+		runtime_error("argument() expects a positive number");
 		return;
 	}
 
 	index = (int) index_memcell->data.numVal;
 	caller_total_actuals = get_env_value(caller_topsp, NUMACTUALS_OFFSET);
 	
-	if(index < 0 || index >= caller_total_actuals) {
-		retval->type = nil_m;
+	if(index >= caller_total_actuals) {
+		sprintf(error, "index %d given to argument exceeds function's arguments", index);
+		runtime_error(error);
 		return;
 	}
 
@@ -345,6 +359,111 @@ void libfunc_argument() {
 	assert(stack_index < STACK_SIZE);
 
 	assign_memcell(retval, &stack[stack_index]);
+}
+
+void libfunc_objectmemberkeys() {
+	
+	avm_memcell key_memcell;
+	avm_memcell value_memcell;
+	avm_table *source_table;
+	avm_table *result_table;
+	avm_table_bucket *bucket;
+	int i, index;
+
+	source_table = get_table_argument("objectmemberkeys()");
+	if(source_table == NULL)
+		return;
+
+	result_table = create_table();
+	assert(result_table != NULL);
+
+	index = 0;
+
+	key_memcell.type = undef_m;
+	key_memcell.data.strVal = NULL;
+	value_memcell.type = undef_m;
+	value_memcell.data.strVal = NULL;
+
+	for(i = 0; i < AVM_TABLE_HASHSIZE; i++) {
+		
+		for(bucket = source_table->numberIndexed[i]; bucket != NULL; bucket = bucket->next) {
+			set_number_memcell(&key_memcell, (double) index);
+			assign_memcell(&value_memcell, &bucket->key);
+			set_table_element(result_table, &key_memcell, &value_memcell);
+
+			index++;
+		}
+
+		for(bucket = source_table->stringIndexed[i]; bucket != NULL; bucket = bucket->next) {
+			set_number_memcell(&key_memcell, (double) index);
+                        assign_memcell(&value_memcell, &bucket->key);
+                        set_table_element(result_table, &key_memcell, &value_memcell);
+
+			index++;
+                }
+	}
+
+	clear_memcell(&key_memcell);
+	clear_memcell(&value_memcell);
+
+	set_retval_table(result_table);
+}
+
+void libfunc_objecttotalmembers() {
+	
+	avm_memcell *retval;
+	avm_table *table;
+
+	table = get_table_argument("objecttotalmembers()");
+	if(table == NULL)
+		return;
+
+	retval = get_retval_register();
+	reset_register(retval);
+	retval->type = number_m;
+	retval->data.numVal = table->total;
+}
+
+void libfunc_objectcopy() {
+	
+	avm_memcell key_memcell;
+	avm_memcell value_memcell;
+	avm_table *source_table;
+	avm_table *result_table;
+	avm_table_bucket *bucket;
+	int i;
+
+	source_table = get_table_argument("objectcopy()");
+	if(source_table == NULL)
+		return;
+
+	result_table = create_table();
+	assert(result_table != NULL);
+
+	key_memcell.type = undef_m;
+	key_memcell.data.strVal = NULL;
+	value_memcell.type = undef_m;
+	value_memcell.data.strVal = NULL;
+
+	for(i = 0; i < AVM_TABLE_HASHSIZE; i++) {
+	
+		for(bucket = source_table->numberIndexed[i]; bucket != NULL; bucket = bucket->next) {
+			assign_memcell(&key_memcell, &bucket->key);
+			assign_memcell(&value_memcell, &bucket->value);
+			set_table_element(result_table, &key_memcell, &value_memcell);
+		}
+
+		for(bucket = source_table->stringIndexed[i]; bucket != NULL; bucket = bucket->next) {
+                        assign_memcell(&key_memcell, &bucket->key);
+                        assign_memcell(&value_memcell, &bucket->value);
+                        set_table_element(result_table, &key_memcell, &value_memcell);
+                }
+	}
+
+	clear_memcell(&key_memcell);
+	clear_memcell(&value_memcell);
+
+	set_retval_table(result_table);
 }
 
 void libfunc_strtonum() {
@@ -388,7 +507,7 @@ void libfunc_sqrt() {
 	double value;
 
 	if(get_current_total_actuals() != 1) {
-		runtime_error("sqrt expects exactly one argument");
+		runtime_error("sqrt() expects exactly one argument");
 		return;
 	}
 
@@ -416,7 +535,7 @@ void libfunc_cos() {
 	double rad;
 
 	if(get_current_total_actuals() != 1) {
-		runtime_error("cos expects exactly one argument");
+		runtime_error("cos() expects exactly one argument");
 		return;
 	}
 
@@ -424,7 +543,7 @@ void libfunc_cos() {
 	assert(actual != NULL);
 
 	if(actual->type != number_m) {
-		runtime_error("cos argument must be a number");
+		runtime_error("cos() argument must be a number");
 		return;
 	}
 
@@ -444,7 +563,7 @@ void libfunc_sin() {
 	double rad;
 
 	if(get_current_total_actuals() != 1) {
-		runtime_error("sin expects exactly one argument");
+		runtime_error("sin() expects exactly one argument");
 		return;
 	}
 
@@ -452,7 +571,7 @@ void libfunc_sin() {
 	assert(actual != NULL);
 
 	if(actual->type != number_m) {
-		runtime_error("sin argument must be a number");
+		runtime_error("sin() argument must be a number");
 		return;
 	}
 
@@ -490,6 +609,15 @@ static int get_library_function_id(const char *name) {
 	if(strcmp(name, "argument") == 0)
 		return LIBFUNC_ARGUMENT;
 
+	if(strcmp(name, "objectmemberkeys") == 0)
+		return LIBFUNC_OBJECTMEMBERKEYS;
+
+	if(strcmp(name, "objecttotalmembers") == 0)
+		return LIBFUNC_OBJECTTOTALMEMBERS;
+
+	if(strcmp(name, "objectcopy") == 0)
+		return LIBFUNC_OBJECTCOPY;
+
 	if(strcmp(name, "strtonum") == 0)
 		return LIBFUNC_STRTONUM;
 
@@ -523,6 +651,61 @@ static avm_memcell *get_actual(int index) {
 
 static int get_caller_topsp() {
 	return get_env_value(get_topsp(), SAVEDTOPSP_OFFSET);
+}
+
+static avm_table *get_table_argument(const char *function_name) {
+	
+	avm_memcell *actual;
+	char error[200];
+
+	assert(function_name != NULL);
+
+	if(get_current_total_actuals() != 1) {
+		sprintf(error, "%s expects exactly one argument", function_name);
+		runtime_error(error);
+		return NULL;
+	}
+
+	actual = get_actual(0);
+	assert(actual != NULL);
+
+	if(actual->type != table_m || actual->data.tableVal == NULL) {
+		sprintf(error, "%s expects a table argument", function_name);
+		runtime_error(error);
+		return NULL;
+	}
+
+	return actual->data.tableVal;
+}
+
+static void set_retval_table(avm_table *table) {
+	avm_memcell *retval;
+
+	assert(table != NULL);
+
+	retval = get_retval_register();
+	reset_register(retval);
+	retval->type = table_m;
+	retval->data.tableVal = table;
+	inc_table_refcounter(table);
+}
+
+static void set_number_memcell(avm_memcell *memcell, double value) {
+	assert(memcell != NULL);
+
+	clear_memcell(memcell);
+	memcell->type = number_m;
+	memcell->data.numVal = value;
+}
+
+static void set_string_memcell(avm_memcell *memcell, const char *value) {
+	assert(memcell != NULL);
+	assert(value != NULL);
+
+	clear_memcell(memcell);
+	memcell->type = string_m;
+	memcell->data.strVal = strdup(value);
+	assert(memcell->data.strVal != NULL);
 }
 
 static void set_retval_nil() {

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "pending_labels.h"
-#include "quad.h"
+#include "headers/pending_labels.h"
+#include "headers/quad.h"
 
 PendingLabel* create_pending_label(int quadID){
  

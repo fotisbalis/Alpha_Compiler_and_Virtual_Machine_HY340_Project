@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "memcell.h"
-#include "table.h"
+#include "headers/memcell.h"
+#include "headers/table.h"
 
 avm_memcell *stack = NULL;
 

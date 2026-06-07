@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "binary_loader.h"
+#include "headers/binary_loader.h"
 
 static unsigned read_unsigned(FILE *fp);
 static int read_int(FILE *fp);

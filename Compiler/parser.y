@@ -4,22 +4,22 @@
 #include <string.h>
 #include <assert.h>
 
-#include "token.h"
-#include "symbol_table.h"
-#include "error.h"
-#include "symbol.h"
-#include "utils.h"
-#include "pending_labels.h"
-#include "expr.h"
-#include "indexed.h"
-#include "quad.h"
-#include "loop_info.h"
-#include "stmt.h"
-#include "callsuffix.h"
-#include "instructions.h"
-#include "const_tables.h"
-#include "generator.h"
-#include "incomplete_jumps.h"
+#include "headers/token.h"
+#include "headers/symbol_table.h"
+#include "headers/error.h"
+#include "headers/symbol.h"
+#include "headers/utils.h"
+#include "headers/pending_labels.h"
+#include "headers/expr.h"
+#include "headers/indexed.h"
+#include "headers/quad.h"
+#include "headers/loop_info.h"
+#include "headers/stmt.h"
+#include "headers/callsuffix.h"
+#include "headers/instructions.h"
+#include "headers/const_tables.h"
+#include "headers/generator.h"
+#include "headers/incomplete_jumps.h"
 
 #define NO_LABEL -1
 #define True 1

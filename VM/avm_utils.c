@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "avm_utils.h"
+#include "headers/avm_utils.h"
 
 static avm_memcell *translate_global_operand(const avm_operand *operand);
 static avm_memcell *translate_local_operand(const avm_operand *operand);

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "const_tables.h"
+#include "headers/const_tables.h"
 
 static char **string_consts = NULL;
 static int string_count = 0;

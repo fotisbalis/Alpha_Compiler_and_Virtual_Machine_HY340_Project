@@ -1,9 +1,9 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "avm_state.h"
-#include "binary_loader.h"
-#include "execution.h"
+#include "headers/avm_state.h"
+#include "headers/binary_loader.h"
+#include "headers/execution.h"
 
 int main(int argc, char **argv) {
 
@@ -28,4 +28,3 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
-

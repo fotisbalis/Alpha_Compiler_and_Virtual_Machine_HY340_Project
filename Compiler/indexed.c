@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "indexed.h"
+#include "headers/indexed.h"
 
 Indexed* create_indexed(Expr *index, Expr *val){
 

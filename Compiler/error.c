@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "error.h"
+#include "headers/error.h"
 
 static Error* head = NULL;
 static Error* tail = NULL;

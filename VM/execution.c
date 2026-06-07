@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <math.h>
 
-#include "execution.h"
+#include "headers/execution.h"
 
 static void execute_arithmetic(const avm_instruction *instruction, int opcode);
 static void execute_relational(const avm_instruction *instruction, int opcode);

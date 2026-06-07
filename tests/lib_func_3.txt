@@ -1,0 +1,5 @@
+t = [];
+t["foo"] = 34;
+t["lala"] = 99;
+println(objecttotalmembers(t));
+println(objectmemberkeys(t));

@@ -1,8 +1,8 @@
 #include <assert.h>
 
-#include "generator.h"
-#include "const_tables.h"
-#include "incomplete_jumps.h"
+#include "headers/generator.h"
+#include "headers/const_tables.h"
+#include "headers/incomplete_jumps.h"
 
 static ioperand make_number_operand(double value);
 
