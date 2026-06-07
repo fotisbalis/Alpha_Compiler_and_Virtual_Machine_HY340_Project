@@ -35,6 +35,10 @@ void call_library_function(const char *name) {
                         libfunc_println();
                         break;
 
+		case LIBFUNC_INPUT:
+			libfunc_input();
+			break;
+
 		case LIBFUNC_TYPEOF:
 			libfunc_typeof();
 			break;
@@ -166,6 +170,63 @@ void libfunc_println() {
         set_retval_nil();
 }
 
+void libfunc_input() {
+
+	avm_memcell *retval;
+	char buffer[4096];
+	int i;
+	char *end;
+	double value;
+
+	if(get_current_total_actuals() != 0) {
+		runtime_error("input expects no arguments");
+		return;
+	}
+
+	retval = get_retval_register();
+	reset_register(retval);
+
+	fgets(buffer, sizeof(buffer), stdin);
+
+	if(buffer != NULL) {
+		for(i = 0; i < strlen(buffer); i++) {
+			if(buffer[i] == '\n') {
+				buffer[i] = '\0';
+				break;
+			}
+		}
+	}
+
+	if(buffer == NULL || strcmp(buffer, "nil") == 0) {
+		retval->type = nil_m;
+		return;
+	}
+
+	if(strcmp(buffer, "true") == 0 || strcmp(buffer, "True") == 0 || strcmp(buffer, "TRUE") == 0
+			|| strcmp(buffer, "false") == 0 || strcmp(buffer, "False") == 0 || strcmp(buffer, "FALSE") == 0) {
+		retval->type = bool_m;
+		retval->data.boolVal = (buffer[0] == 't' || buffer[0] == 'T') ? True : False;
+		
+		return;
+	}
+
+	value = strtod(buffer, &end);
+	if(*end == '\0') {
+		retval->type = number_m;
+		retval->data.numVal = value;
+		
+		return;
+	}
+
+	memmove(buffer + 1, buffer, strlen(buffer) + 1);
+	buffer[0] = '\"';
+	strcat(buffer, "\"");
+
+	retval->type = string_m;
+	retval->data.strVal = strdup(buffer);
+	assert(retval->data.strVal != NULL);
+}
+
 void libfunc_typeof() {
 	
 	avm_memcell *retval;
@@ -290,7 +351,7 @@ void libfunc_strtonum() {
 	
 	avm_memcell *retval;
 	avm_memcell *actual;
-	char *ptr;
+	char *end;
 	double value;
 
 	if(get_current_total_actuals() != 1) {
@@ -309,9 +370,9 @@ void libfunc_strtonum() {
 		return;
 	}
 
-	value = strtod(actual->data.strVal, &ptr);
+	value = strtod(actual->data.strVal, &end);
 
-	if(ptr == actual->data.strVal || *ptr != '\0') {
+	if(end == actual->data.strVal || *end != '\0') {
 		retval->type = nil_m;
 		return;
 	}
@@ -416,6 +477,9 @@ static int get_library_function_id(const char *name) {
 
 	if(strcmp(name, "println") == 0)
 		return LIBFUNC_PRINTLN;
+
+	if(strcmp(name, "input") == 0)
+		return LIBFUNC_INPUT;
 
 	if(strcmp(name, "typeof") == 0)
 		return LIBFUNC_TYPEOF;

@@ -14,7 +14,9 @@ function fibbonacci(a) {
 	return fibbonacci(a - 1) + fibbonacci(a - 2);
 }
 
-for(i = -1; i < 8; i++) {
-	print("factorial of ", i, " = ", factorial(i), "\n");
-	print("fibbonacci of ", i, " = ", fibbonacci(i), "\n\n");
-}
+print("Give a positive integer: ");
+x = input();
+a = x;
+b = x;
+print("fibbonacci of ", x, " = ", fibbonacci(a), "\n");
+print("factorial of ", x, " = ", factorial(b), "\n");

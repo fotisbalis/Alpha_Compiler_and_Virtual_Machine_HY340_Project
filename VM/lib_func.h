@@ -7,6 +7,7 @@
 enum library_function_id {
 	LIBFUNC_PRINT,
 	LIBFUNC_PRINTLN,
+	LIBFUNC_INPUT,
 	LIBFUNC_TYPEOF,
 	LIBFUNC_TOTALARGUMENTS,
 	LIBFUNC_ARGUMENT,
@@ -21,6 +22,7 @@ void call_library_function(const char *name);
 
 void libfunc_print();
 void libfunc_println();
+void libfunc_input();
 void libfunc_typeof();
 void libfunc_totalarguments();
 void libfunc_argument();
