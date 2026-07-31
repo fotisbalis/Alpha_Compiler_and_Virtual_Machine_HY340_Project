@@ -1,6 +1,6 @@
 # Alpha Compiler & Virtual Machine
 
-> Balis Fotios Marios csd4958
+**Balis Fotios Marios** *· csd4958*
 
 The project implements a compiler and a virtual machine for the Alpha programming language (similar to Javascript).
 The language used for the implementation is c alongside Flex for lexical analysis and Yacc Bison for syntactical analysis.
@@ -51,7 +51,7 @@ Run `$./alpha_vm alpha.abc`
 
 ## Virtual Machine output
 
-The final output of the input file
+Console type output of the input code
 
 ---
 
